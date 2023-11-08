@@ -5,6 +5,8 @@ author: "MLBoss"
 
 
 ```{python}
+#| output: false
+
 from src import helpers
 dict_ = helpers.read_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
 data = dict_["data"]
