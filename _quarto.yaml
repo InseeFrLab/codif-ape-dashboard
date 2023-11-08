@@ -5,4 +5,6 @@ project:
 
 format:
   dashboard:
+    logo: https://upload.wikimedia.org/wikipedia/fr/1/10/Logo_Insee.svg
+    nav-buttons: github
     theme: [yeti, style/custom.scss]

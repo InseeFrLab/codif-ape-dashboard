@@ -1,8 +1,6 @@
 ---
 title: "Dashboard Test"
 author: "MLBoss"
-logo: https://upload.wikimedia.org/wikipedia/fr/1/10/Logo_Insee.svg
-
 ---
 
 
@@ -19,7 +17,7 @@ values = dict_["values"]
 #| component: valuebox
 #| title: "Nombre de liasses"
 dict(
-    icon = "U+1F4C3",
+    icon = "folder2-open",
     color = "secondary",
     value = values["TotalRows"][0]
 )
@@ -30,9 +28,9 @@ dict(
 #| component: valuebox
 #| title: "Pourcentage de codification automatique"
 dict(
-    icon = "U+2705",
-    color = "secondary",
-    value = values["PercentageHighIC"][0]
+    icon = "file-check",
+    color = "success",
+    value = f"""{round(values["PercentageHighIC"][0],2)}%"""
 )
 ```
 
