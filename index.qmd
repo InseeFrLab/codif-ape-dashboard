@@ -1,0 +1,47 @@
+---
+title: "Dashboard Test"
+author: "MLBoss"
+logo: https://upload.wikimedia.org/wikipedia/fr/1/10/Logo_Insee.svg
+
+---
+
+
+```{python}
+from src import helpers
+dict_ = helpers.read_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
+data = dict_["data"]
+values = dict_["values"]
+```
+
+## Row
+
+```{python}
+#| component: valuebox
+#| title: "Nombre de liasses"
+dict(
+    icon = "U+1F4C3",
+    color = "secondary",
+    value = values["TotalRows"][0]
+)
+```
+
+
+```{python}
+#| component: valuebox
+#| title: "Pourcentage de codification automatique"
+dict(
+    icon = "U+2705",
+    color = "secondary",
+    value = values["PercentageHighIC"][0]
+)
+```
+
+## Row
+
+### Column {width=100%}
+
+```{python}
+#| title: Distribution des indices de confiances
+#| padding: 0
+helpers.make_chart(data)
+```
