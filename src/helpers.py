@@ -6,7 +6,7 @@ import os
 def read_data(path: str):
 
     duckdb.sql(f"""
-        SET s3_endpoint='minio.lab.sspcloud.fr';
+        SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
         SET s3_access_key_id='{os.getenv("AWS_ACCESS_KEY_ID")}';
         SET s3_secret_access_key='{os.getenv("AWS_SECRET_ACCESS_KEY")}';
         SET s3_session_token='';
