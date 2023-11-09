@@ -37,9 +37,22 @@ def read_data(path: str):
     # Write all data to unique parquet file
     duckdb.sql("SELECT * FROM data").write_parquet("data/data.parquet")
 
+    test2 = duckdb.sql(
+        """
+    SELECT
+        data."Query.Auto",
+        COUNT(*) AS Occurrences,
+        COUNT(*) * 100.0 / (SELECT COUNT(*) FROM data) AS Percentage
+    FROM
+        data
+    GROUP BY
+        data."Query.Auto";
+    """
+    )
+
     df = duckdb.sql("SELECT * FROM data").to_df()
 
-    return {"data": df, "values": test.to_df().to_dict()}
+    return {"data": df, "values": test.to_df().to_dict(), "values2": test2.to_df()}
 
 
 def make_chart(data: pd.DataFrame):
