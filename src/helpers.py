@@ -5,7 +5,10 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-def read_data(path: str):
+def init_duckdb_s3() -> None:
+    """
+    Set up S3 credentials for DuckDB.
+    """
     duckdb.sql(
         f"""
         SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
@@ -15,6 +18,15 @@ def read_data(path: str):
         """
     )
 
+
+def read_all_data(path: str) -> None:
+    """
+    Create a VIEW `data` to be queried with DuckDB containing
+    all log data stored on S3.
+
+    Args:
+        path (str): Path to log parquet files.
+    """
     duckdb.sql(
         f"""
         CREATE OR REPLACE VIEW data
@@ -22,41 +34,26 @@ def read_data(path: str):
         """
     )
 
-    test = duckdb.sql(
-        """
-        SELECT
-            COUNT(*) AS TotalRows,
-            (COUNT(
-                CASE WHEN data."Response.IC" > 0.8 THEN 1 END
-                ) * 100.0 / COUNT(*)
-            ) AS PercentageHighIC
-        FROM data;
-        """
-    )
 
-    # Write all data to unique parquet file
+def write_all_data_to_parquet() -> None:
+    """
+    Write all log data to a single parquet file for
+    DuckDB-Wasm (Observable).
+    """
     duckdb.sql("SELECT * FROM data").write_parquet("data/data.parquet")
 
-    test2 = duckdb.sql(
-        """
-    SELECT
-        data."Query.Auto",
-        COUNT(*) AS Occurrences,
-        COUNT(*) * 100.0 / (SELECT COUNT(*) FROM data) AS Percentage
-    FROM
-        data
-    GROUP BY
-        data."Query.Auto";
+
+def make_chart(data: pd.DataFrame, var_name: str, opacity: float = 0.7, color: str = "#040548"):
     """
-    )
+    Make histogram of variable `var_name` in DataFrame `data`.
 
-    df = duckdb.sql("SELECT * FROM data").to_df()
-
-    return {"data": df, "values": test.to_df().to_dict(), "values2": test2.to_df()}
-
-
-def make_chart(data: pd.DataFrame):
+    Args:
+        data (pd.DataFrame): Data.
+        var_name (str): Variable name.
+        opacity (float): Opacity.
+        color (str): Color hex.
+    """
     fig = go.Figure(
-        data=[go.Histogram(x=data["Response.IC"], opacity=0.7, marker=dict(color="#040548"))],
+        data=[go.Histogram(x=data[var_name], opacity=opacity, marker=dict(color=color))],
     )
     return fig

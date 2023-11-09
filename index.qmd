@@ -7,14 +7,46 @@ author: "MLBoss"
 
 ```{python}
 #| output: false
-
+import duckdb
 from src import helpers
-dict_ = helpers.read_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
-data = dict_["data"]
-values = dict_["values"]
+
+helpers.init_duckdb_s3()
+helpers.read_all_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
+helpers.write_all_data_to_parquet()
 ```
 
 ## Row
+
+```{python}
+#| output: false
+auto_percentages = duckdb.sql(
+    """
+    SELECT
+        data."Query.Auto",
+        COUNT(*) AS Occurrences,
+        COUNT(*) * 100.0 / (SELECT COUNT(*) FROM data) AS Percentage
+    FROM
+        data
+    GROUP BY
+        data."Query.Auto";
+    """
+)
+```
+
+```{python}
+#| output: false
+percentage_high_ic = duckdb.sql(
+    """
+    SELECT
+        COUNT(*) AS TotalRows,
+        (COUNT(
+            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
+            ) * 100.0 / COUNT(*)
+        ) AS PercentageHighIC
+    FROM data;
+    """
+).to_df().to_dict()
+```
 
 ```{python}
 #| component: valuebox
@@ -22,7 +54,7 @@ values = dict_["values"]
 dict(
     icon = "folder2-open",
     color = "secondary",
-    value = values["TotalRows"][0]
+    value = percentage_high_ic["TotalRows"][0]
 )
 ```
 
@@ -33,7 +65,7 @@ dict(
 dict(
     icon = "file-check",
     color = "success",
-    value = f"""{round(values["PercentageHighIC"][0],2)}%"""
+    value = f"""{round(percentage_high_ic["PercentageHighIC"][0],2)}%"""
 )
 ```
 
@@ -42,9 +74,16 @@ dict(
 ### Column {width=100%}
 
 ```{python}
+#| output: false
+data = duckdb.sql("SELECT * FROM data").to_df()
+```
+
+```{python}
 #| title: Distribution des indices de confiances
 #| padding: 0
-helpers.make_chart(data)
+helpers.make_chart(
+    data,
+    "Response.IC")
 ```
 
 ## Row
@@ -65,4 +104,5 @@ data_month = db.query(`SELECT * FROM data`)
 ```{ojs}
 data_month
 ```
+
 # Observable
