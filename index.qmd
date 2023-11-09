@@ -3,6 +3,7 @@ title: "Dashboard Test"
 author: "MLBoss"
 ---
 
+# Python
 
 ```{python}
 #| output: false
@@ -64,3 +65,4 @@ data_month = db.query(`SELECT * FROM data`)
 ```{ojs}
 data_month
 ```
+# Observable
