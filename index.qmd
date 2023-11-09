@@ -71,6 +71,82 @@ dict(
 
 ## Row
 
+```{python}
+#| output: false
+percentage_high_ic_day = duckdb.sql(
+    """
+    SELECT
+        date,
+        COUNT(*) AS TotalRows,
+        (COUNT(
+            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
+            ) * 100.0 / COUNT(*)
+        ) AS PercentageHighIC
+    FROM data
+    GROUP BY date;
+    """
+).to_df()
+```
+
+```{python}
+#| title: Nombre de requêtes par jour
+#| padding: 0
+helpers.make_barplot(
+    percentage_high_ic_day,
+    "date",
+    "TotalRows")
+```
+
+
+```{python}
+#| title: "Pourcentage de codification automatique par jour"
+#| padding: 0
+helpers.make_barplot(
+    percentage_high_ic_day,
+    "date",
+    "PercentageHighIC",
+    color="PercentageHighIC")
+```
+
+## Row
+
+```{python}
+#| output: false
+percentage_high_ic_week = duckdb.sql(
+    """
+    SELECT
+        DATE_TRUNC('week', date) AS week_start,
+        COUNT(*) AS TotalRows,
+        (COUNT(
+            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
+            ) * 100.0 / COUNT(*)
+        ) AS PercentageHighIC
+    FROM data
+    GROUP BY DATE_TRUNC('week', date);
+    """
+).to_df()
+```
+
+```{python}
+#| title: Nombre de requêtes par semaine
+#| padding: 0
+helpers.make_barplot(
+    percentage_high_ic_week,
+    "week_start",
+    "TotalRows")
+```
+
+
+```{python}
+#| title: "Pourcentage de codification automatique par semaine"
+#| padding: 0
+helpers.make_barplot(
+    percentage_high_ic_week,
+    "week_start",
+    "PercentageHighIC",
+    color="PercentageHighIC")
+```
+
 ### Column {width=100%}
 
 ```{python}
@@ -81,10 +157,38 @@ data = duckdb.sql("SELECT * FROM data").to_df()
 ```{python}
 #| title: Distribution des indices de confiances
 #| padding: 0
-helpers.make_chart(
+helpers.make_histogram(
     data,
     "Response.IC")
 ```
+
+# Codes prédits
+
+## Row
+
+```{python}
+#| output: false
+npred_section = duckdb.sql(
+    """
+    SELECT
+        LEFT("Response.1.code", 2) as section,
+        COUNT(*) AS n_preds
+    FROM data
+    GROUP BY LEFT("Response.1.code", 2)
+    """
+).to_df()
+```
+
+```{python}
+#| title: "Nombre de prédictions par section de la NAF"
+#| padding: 0#|
+helpers.make_barplot(
+    npred_section,
+    "section",
+    "n_preds")
+```
+
+# Observable
 
 ## Row
 
@@ -104,5 +208,3 @@ data_month = db.query(`SELECT * FROM data`)
 ```{ojs}
 data_month
 ```
-
-# Observable

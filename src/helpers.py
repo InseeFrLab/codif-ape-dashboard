@@ -1,7 +1,9 @@
 import os
+import re
 
 import duckdb
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 
 
@@ -43,7 +45,7 @@ def write_all_data_to_parquet() -> None:
     duckdb.sql("SELECT * FROM data").write_parquet("data/data.parquet")
 
 
-def make_chart(data: pd.DataFrame, var_name: str, opacity: float = 0.7, color: str = "#040548"):
+def make_histogram(data: pd.DataFrame, var_name: str, opacity: float = 0.7, color: str = "#040548"):
     """
     Make histogram of variable `var_name` in DataFrame `data`.
 
@@ -57,3 +59,44 @@ def make_chart(data: pd.DataFrame, var_name: str, opacity: float = 0.7, color: s
         data=[go.Histogram(x=data[var_name], opacity=opacity, marker=dict(color=color))],
     )
     return fig
+
+
+def make_barplot(
+    data: pd.DataFrame, var_x: str, var_count: str, opacity: float = 0.7, color: str = "#040548"
+):
+    """
+    Make a barplot for var_x.
+
+    Args:
+        data (pd.DataFrame): Data.
+        var_x (str): X variable.
+        var_y (str): Count variable.
+        opacity (float): Opacity.
+        color (str): Color or variable.
+    """
+    if is_valid_hex_color(color):
+        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity)
+        fig.update_traces(marker_color=color)
+    else:
+        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, color=color)
+    return fig
+
+
+def is_valid_hex_color(color: str) -> bool:
+    """
+    Return True if color is a hex code and False otherwise.
+
+    Args:
+        hex_code (str): Hex code.
+
+    Returns:
+        bool: True or False.
+    """
+    # Define a regular expression pattern for a valid color hex code.
+    hex_color_pattern = r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+
+    # Use the re.match function to check if the string matches the pattern.
+    if re.match(hex_color_pattern, color):
+        return True
+    else:
+        return False
