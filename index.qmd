@@ -45,3 +45,22 @@ dict(
 #| padding: 0
 helpers.make_chart(data)
 ```
+
+## Row
+
+```{ojs}
+//| output: false
+
+db = {
+  const configuredClient = await DuckDBClient.of({
+    data: FileAttachment("data/data.parquet")
+  });
+  return configuredClient;
+}
+
+data_month = db.query(`SELECT * FROM data`)
+```
+
+```{ojs}
+data_month
+```
