@@ -102,7 +102,8 @@ percentage_high_ic_day = duckdb.sql(
 helpers.make_barplot(
     percentage_high_ic_day,
     "date",
-    "TotalRows")
+    "TotalRows",
+    yaxis_title="Nombre de requêtes")
 ```
 
 
@@ -114,7 +115,8 @@ helpers.make_barplot(
     percentage_high_ic_day,
     "date",
     "PercentageHighIC",
-    color="PercentageHighIC")
+    color="PercentageHighIC",
+    yaxis_title="Pourcentage de codification automatique")
 ```
 
 ## Row
@@ -144,7 +146,8 @@ percentage_high_ic_week = duckdb.sql(
 helpers.make_barplot(
     percentage_high_ic_week,
     "week_start",
-    "TotalRows")
+    "TotalRows",
+    "Nombre de requêtes")
 ```
 
 
@@ -156,7 +159,8 @@ helpers.make_barplot(
     percentage_high_ic_week,
     "week_start",
     "PercentageHighIC",
-    color="PercentageHighIC")
+    color="PercentageHighIC",
+    yaxis_title="Pourcentage de codification automatique")
 ```
 
 ### Column {width=100%}
@@ -173,7 +177,10 @@ data = duckdb.sql("SELECT * FROM data").to_df()
 #| padding: 0
 helpers.make_histogram(
     data,
-    "Response.IC")
+    "Response.IC",
+    xaxis_title="Indice de confiance",
+    yaxis_title="Nombre de liasses",
+)
 ```
 
 # Codes prédits
@@ -219,7 +226,71 @@ def agg_barplot():
     return helpers.make_barplot(
         aggregate_preds_at_level(),
         input.aggregation().lower(),
-        "n_preds"
+        "n_preds",
+        yaxis_title="Nombre de liasses"
+    )
+```
+
+## Row
+
+```{python}
+#| context: setup
+#| output: false
+npred_code_date = duckdb.sql(
+    """
+    SELECT
+        "Response.1.code" as "sous-classe",
+        date,
+        COUNT(*) AS n_preds
+    FROM data
+    GROUP BY "Response.1.code", date
+    """
+).to_df()
+npred_code_date["division"] = npred_code_date['sous-classe'].str[:-3]
+npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTIONS)
+```
+
+### Column {width=30%}
+
+```{python}
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
+ui.input_select("aggregation_2", "Niveau d'aggrégation:",
+                choices=["Division", "Section"])
+ui.input_select("time_aggregation", "Niveau d'aggrégation temporel:",
+                choices=["Semaine", "Mois"])
+ui.input_slider("n_times", "Fenêtre temporelle", min=1, max=10, value=2)
+```
+
+### Column
+
+```{python}
+@reactive.Calc
+def aggregate_preds_at_level_time():
+    aggregation_level = input.aggregation_2().lower()
+    data = npred_code_date.copy()
+
+    if input.time_aggregation() == "Semaine":
+        data['date'] = data['date'].dt.strftime('%Y-%U')
+    elif input.time_aggregation() == "Mois":
+        data['date'] = data['date'].dt.strftime('%Y-%m')
+
+    data = npred_code_date.groupby([aggregation_level, 'date'])["n_preds"].sum().reset_index()
+    data = data.sort_values(by=['date', aggregation_level])
+    recent_dates = data['date'].drop_duplicates().nlargest(input.n_times())
+    data = data[data['date'].isin(recent_dates)]
+    return data
+
+@render_widget
+def agg_time_barplot():
+    return helpers.make_barplot(
+        filter_aggregate_preds(),
+        input.aggregation_2().lower(),
+        "n_preds",
+        yaxis_title="Nombre de liasses",
+        color="date",
+        barmode="group"
     )
 ```
 

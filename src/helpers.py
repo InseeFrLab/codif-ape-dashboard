@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Optional
 
 import duckdb
 import pandas as pd
@@ -45,24 +46,44 @@ def write_all_data_to_parquet() -> None:
     duckdb.sql("SELECT * FROM data").write_parquet("data/data.parquet")
 
 
-def make_histogram(data: pd.DataFrame, var_name: str, opacity: float = 0.7, color: str = "#040548"):
+def make_histogram(
+    data: pd.DataFrame,
+    var_name: str,
+    yaxis_title: Optional[str] = None,
+    xaxis_title: Optional[str] = None,
+    opacity: float = 0.7,
+    color: str = "#040548",
+):
     """
     Make histogram of variable `var_name` in DataFrame `data`.
 
     Args:
         data (pd.DataFrame): Data.
         var_name (str): Variable name.
+        yaxis_title (str): Y axis title.
+        xaxis_title (str): X axis title.
         opacity (float): Opacity.
         color (str): Color hex.
     """
     fig = go.Figure(
         data=[go.Histogram(x=data[var_name], opacity=opacity, marker=dict(color=color))],
     )
+    fig.update_layout(
+        xaxis_title=xaxis_title,
+        yaxis_title=yaxis_title,
+    )
     return fig
 
 
 def make_barplot(
-    data: pd.DataFrame, var_x: str, var_count: str, opacity: float = 0.7, color: str = "#040548"
+    data: pd.DataFrame,
+    var_x: str,
+    var_count: str,
+    yaxis_title: Optional[str] = None,
+    xaxis_title: Optional[str] = None,
+    opacity: float = 0.7,
+    color: str = "#040548",
+    barmode: str = "relative",
 ):
     """
     Make a barplot for var_x.
@@ -71,14 +92,21 @@ def make_barplot(
         data (pd.DataFrame): Data.
         var_x (str): X variable.
         var_y (str): Count variable.
+        yaxis_title (str): Y axis title.
+        xaxis_title (str): X axis title.
         opacity (float): Opacity.
         color (str): Color or variable.
+        barmode (str): Bar mode.
     """
     if is_valid_hex_color(color):
-        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity)
+        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, barmode=barmode)
         fig.update_traces(marker_color=color)
     else:
-        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, color=color)
+        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, color=color, barmode=barmode)
+    fig.update_layout(
+        xaxis_title=xaxis_title,
+        yaxis_title=yaxis_title,
+    )
     return fig
 
 
