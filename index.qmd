@@ -6,9 +6,11 @@ author: "MLBoss"
 # Python
 
 ```{python}
+#| context: setup
 #| output: false
 import duckdb
 from src import helpers
+from src import constants
 
 helpers.init_duckdb_s3()
 helpers.read_all_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
@@ -18,6 +20,7 @@ helpers.write_all_data_to_parquet()
 ## Row
 
 ```{python}
+#| context: setup
 #| output: false
 auto_percentages = duckdb.sql(
     """
@@ -34,6 +37,7 @@ auto_percentages = duckdb.sql(
 ```
 
 ```{python}
+#| context: setup
 #| output: false
 percentage_high_ic = duckdb.sql(
     """
@@ -49,6 +53,7 @@ percentage_high_ic = duckdb.sql(
 ```
 
 ```{python}
+#| context: setup
 #| component: valuebox
 #| title: "Nombre de liasses"
 dict(
@@ -60,6 +65,7 @@ dict(
 
 
 ```{python}
+#| context: setup
 #| component: valuebox
 #| title: "Pourcentage de codification automatique"
 dict(
@@ -72,6 +78,7 @@ dict(
 ## Row
 
 ```{python}
+#| context: setup
 #| output: false
 percentage_high_ic_day = duckdb.sql(
     """
@@ -89,6 +96,7 @@ percentage_high_ic_day = duckdb.sql(
 ```
 
 ```{python}
+#| context: setup
 #| title: Nombre de requêtes par jour
 #| padding: 0
 helpers.make_barplot(
@@ -99,6 +107,7 @@ helpers.make_barplot(
 
 
 ```{python}
+#| context: setup
 #| title: "Pourcentage de codification automatique par jour"
 #| padding: 0
 helpers.make_barplot(
@@ -111,6 +120,7 @@ helpers.make_barplot(
 ## Row
 
 ```{python}
+#| context: setup
 #| output: false
 percentage_high_ic_week = duckdb.sql(
     """
@@ -128,6 +138,7 @@ percentage_high_ic_week = duckdb.sql(
 ```
 
 ```{python}
+#| context: setup
 #| title: Nombre de requêtes par semaine
 #| padding: 0
 helpers.make_barplot(
@@ -138,6 +149,7 @@ helpers.make_barplot(
 
 
 ```{python}
+#| context: setup
 #| title: "Pourcentage de codification automatique par semaine"
 #| padding: 0
 helpers.make_barplot(
@@ -150,11 +162,13 @@ helpers.make_barplot(
 ### Column {width=100%}
 
 ```{python}
+#| context: setup
 #| output: false
 data = duckdb.sql("SELECT * FROM data").to_df()
 ```
 
 ```{python}
+#| context: setup
 #| title: Distribution des indices de confiances
 #| padding: 0
 helpers.make_histogram(
@@ -167,25 +181,46 @@ helpers.make_histogram(
 ## Row
 
 ```{python}
+#| context: setup
 #| output: false
-npred_section = duckdb.sql(
+npred_code = duckdb.sql(
     """
     SELECT
-        LEFT("Response.1.code", 2) as section,
+        "Response.1.code" as "sous-classe",
         COUNT(*) AS n_preds
     FROM data
-    GROUP BY LEFT("Response.1.code", 2)
+    GROUP BY "Response.1.code"
     """
 ).to_df()
+npred_code["classe"] = npred_code['sous-classe'].str[:-1]
+npred_code["groupe"] = npred_code['sous-classe'].str[:-2]
+npred_code["division"] = npred_code['sous-classe'].str[:-3]
+npred_code["section"] = npred_code['division'].map(constants.NAF_SECTIONS)
 ```
 
+## Row
+
 ```{python}
-#| title: "Nombre de prédictions par section de la NAF"
-#| padding: 0#|
-helpers.make_barplot(
-    npred_section,
-    "section",
-    "n_preds")
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
+ui.input_select("aggregation", "Niveau d'aggrégation:",
+                choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"])
+
+@reactive.Calc
+def aggregate_preds_at_level():
+    aggregation_level = input.aggregation().lower()
+    data = npred_code.groupby(aggregation_level)["n_preds"].sum().reset_index()
+    data = data.sort_values(by=aggregation_level)
+    return data
+
+@render_widget
+def agg_barplot():
+    return helpers.make_barplot(
+        aggregate_preds_at_level(),
+        input.aggregation().lower(),
+        "n_preds"
+    )
 ```
 
 # Observable

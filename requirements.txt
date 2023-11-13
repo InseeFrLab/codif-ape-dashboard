@@ -5,3 +5,5 @@ ipykernel==6.26.0
 ipywidgets==8.1.1
 nbclient==0.7.4
 nbformat==5.9.2
+shiny
+shinywidgets

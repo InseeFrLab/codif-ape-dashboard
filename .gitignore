@@ -1,6 +1,9 @@
 /.quarto/
 /_site/
-*/__pycache__/
+__pycache__/
 *.ipynb
 .jupyter_cache/
 data/data.parquet
+app.py
+index.html
+index_files/

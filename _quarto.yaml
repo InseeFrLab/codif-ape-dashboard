@@ -1,8 +1,7 @@
 project:
-  type: website
   render:
     - index.qmd
-
+server: shiny
 format:
   dashboard:
     logo: https://upload.wikimedia.org/wikipedia/fr/1/10/Logo_Insee.svg
