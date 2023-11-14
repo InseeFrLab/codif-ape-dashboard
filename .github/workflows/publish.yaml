@@ -1,6 +1,9 @@
-name: Publish slides
+name: Publish dashboard
 
 on:
+  schedule:
+    # everyday at 5am
+    - cron: '00 5 * * *'
   push:
     branches:
       - "main"
