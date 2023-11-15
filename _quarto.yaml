@@ -1,6 +1,6 @@
 project:
   render:
-    - index_test.qmd
+    - index.qmd
 server: shiny
 format:
   dashboard:
