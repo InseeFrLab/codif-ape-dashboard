@@ -223,9 +223,13 @@ npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTI
 ```
 
 ```{python}
+#| context: setup
+#| output: false
 from shiny import render, reactive, ui
 from shinywidgets import render_widget
+```
 
+```{python}
 ui.input_select("aggregation", "Niveau d'aggrégation:",
                 choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"])
 
@@ -287,25 +291,4 @@ def agg_time_barplot():
         color="date",
         barmode="group"
     )
-```
-
-# Observable
-
-## Row
-
-```{ojs}
-//| output: false
-
-db = {
-  const configuredClient = await DuckDBClient.of({
-    data: FileAttachment("data/data.parquet")
-  });
-  return configuredClient;
-}
-
-data_month = db.query(`SELECT * FROM data`)
-```
-
-```{ojs}
-data_month
 ```
