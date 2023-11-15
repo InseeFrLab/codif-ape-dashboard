@@ -7,3 +7,4 @@ nbclient==0.7.4
 nbformat==5.9.2
 shiny
 shinywidgets
+matplotlib
