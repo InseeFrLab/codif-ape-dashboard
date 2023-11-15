@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      AWS_S3_ENDPOINT: minio.lab.sspcloud.fr
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
