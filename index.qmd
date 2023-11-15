@@ -253,9 +253,6 @@ npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTI
 ### Column {width=30%}
 
 ```{python}
-from shiny import render, reactive, ui
-from shinywidgets import render_widget
-
 ui.input_select("aggregation_2", "Niveau d'aggrégation:",
                 choices=["Division", "Section"])
 ui.input_select("time_aggregation", "Niveau d'aggrégation temporel:",
@@ -285,7 +282,7 @@ def aggregate_preds_at_level_time():
 @render_widget
 def agg_time_barplot():
     return helpers.make_barplot(
-        filter_aggregate_preds(),
+        aggregate_preds_at_level_time(),
         input.aggregation_2().lower(),
         "n_preds",
         yaxis_title="Nombre de liasses",
