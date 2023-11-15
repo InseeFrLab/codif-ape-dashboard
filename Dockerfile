@@ -3,6 +3,8 @@ FROM $BASE_IMAGE
 
 USER root
 
+WORKDIR /app
+
 # Clone repository
 RUN git clone https://github.com/InseeFrLab/codif-ape-dashboard.git .
 
