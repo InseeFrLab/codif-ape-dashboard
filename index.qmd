@@ -205,7 +205,22 @@ npred_code["division"] = npred_code['sous-classe'].str[:-3]
 npred_code["section"] = npred_code['division'].map(constants.NAF_SECTIONS)
 ```
 
-## Row
+```{python}
+#| context: setup
+#| output: false
+npred_code_date = duckdb.sql(
+    """
+    SELECT
+        "Response.1.code" as "sous-classe",
+        date,
+        COUNT(*) AS n_preds
+    FROM data
+    GROUP BY "Response.1.code", date
+    """
+).to_df()
+npred_code_date["division"] = npred_code_date['sous-classe'].str[:-3]
+npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTIONS)
+```
 
 ```{python}
 from shiny import render, reactive, ui
@@ -232,23 +247,6 @@ def agg_barplot():
 ```
 
 ## Row
-
-```{python}
-#| context: setup
-#| output: false
-npred_code_date = duckdb.sql(
-    """
-    SELECT
-        "Response.1.code" as "sous-classe",
-        date,
-        COUNT(*) AS n_preds
-    FROM data
-    GROUP BY "Response.1.code", date
-    """
-).to_df()
-npred_code_date["division"] = npred_code_date['sous-classe'].str[:-3]
-npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTIONS)
-```
 
 ### Column {width=30%}
 
