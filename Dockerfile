@@ -23,6 +23,12 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.489/qua
     quarto check install &&\
     rm quarto.deb
 
+RUN echo $AWS_ACCESS_KEY_ID
+
+RUN echo $AWS_SECRET_ACCESS_KEY
+
+RUN echo $AWS_S3_ENDPOINT
+
 RUN quarto render --output-dir _build
 
 ENTRYPOINT ["shiny", "run", "_build/app.py"]
