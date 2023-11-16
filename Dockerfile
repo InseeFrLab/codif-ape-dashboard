@@ -11,6 +11,18 @@ ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 ARG AWS_S3_ENDPOINT
 ENV AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
 
+# Install shiny server
+RUN apt-get update &&\
+    apt-get install -y gdebi-core &&\
+    RUN wget https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.20.1002-amd64.deb &&\
+    RUN gdebi -n shiny-server-1.5.20.1002-amd64.deb
+
+# Custom config
+RUN sed -i '1s/^/python \/usr\/bin\/python3;\n/' /etc/shiny-server/shiny-server.conf
+
+# Install systemd
+RUN apt-get install systemd
+
 WORKDIR /app
 
 # Clone repository
@@ -23,12 +35,10 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.489/qua
     quarto check install &&\
     rm quarto.deb
 
-RUN echo $AWS_ACCESS_KEY_ID
+RUN rm -rf /srv/shiny-server/*
 
-RUN echo $AWS_SECRET_ACCESS_KEY
+RUN quarto render --output-dir _build/
 
-RUN echo $AWS_S3_ENDPOINT
+EXPOSE 80
 
-RUN quarto render --output-dir _build
-
-ENTRYPOINT ["shiny", "run", "_build/app.py"]
+ENTRYPOINT ["uvicorn", "_build.app:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]

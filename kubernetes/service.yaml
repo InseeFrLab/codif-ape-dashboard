@@ -5,6 +5,8 @@ metadata:
 spec:
   ports:
   - port: 80
-    targetPort: 8000
+    targetPort: 80
+    protocol: TCP
+    name: http
   selector:
     app: dashboard-ape
