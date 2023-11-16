@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-ape
+spec:
+  selector:
+    matchLabels:
+      app: dashboard-ape
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dashboard-ape
+    spec:
+      containers:
+        - name: dashboard-ape
+          image: inseefrlab/dashboard-ape
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: my-s3-creds
+                  key: accessKey
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-s3-creds
+                  key: secretKey
+            - name: AWS_S3_ENDPOINT
+              value: "minio.lab.sspcloud.fr"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "5Gi"
+              cpu: "10000m"
