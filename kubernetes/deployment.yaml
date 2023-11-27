@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: dashboard-ape
-          image: inseefrlab/dashboard-ape
+          image: inseefrlab/dashboard-ape:latest  # TODO: change to nightly tag
+          imagePullPolicy: Always
           env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
