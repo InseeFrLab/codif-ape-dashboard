@@ -28,7 +28,7 @@ jobs:
             # set latest tag for main branch
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             # set tag for scheduled build
-            type=schedule,pattern={{date 'YYYYMMDD'}}
+            type=schedule,pattern=nightly
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
