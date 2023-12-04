@@ -353,101 +353,105 @@ def plot_auto_percentages():
 
 # Codes prédits
 
-## Row
+## Row {height=20%}
+
+### Column {width=40%}
 
 ```{python}
-#| context: setup
-#| output: false
-npred_code = duckdb.sql(
-    """
-    SELECT
-        "Response.1.code" as "sous-classe",
-        COUNT(*) AS n_preds
-    FROM data
-    GROUP BY "Response.1.code"
-    """
-).to_df()
-npred_code["classe"] = npred_code['sous-classe'].str[:-1]
-npred_code["groupe"] = npred_code['sous-classe'].str[:-2]
-npred_code["division"] = npred_code['sous-classe'].str[:-3]
-npred_code["section"] = npred_code['division'].map(constants.NAF_SECTIONS)
+ui.input_slider(
+    id="time_window_p3_a",
+    label="Fenêtre temporelle A",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(min_date, max_date)
+)
 ```
 
+
+### Column {width=20%}
+
 ```{python}
-#| context: setup
-#| output: false
-npred_code_date = duckdb.sql(
-    """
-    SELECT
-        "Response.1.code" as "sous-classe",
-        date,
-        COUNT(*) AS n_preds
-    FROM data
-    GROUP BY "Response.1.code", date
-    """
-).to_df()
-npred_code_date["division"] = npred_code_date['sous-classe'].str[:-3]
-npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTIONS)
+ui.input_select(
+    "aggregation_p3",
+    "Niveau d'aggrégation:",
+    choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"]
+)
 ```
 
+### Column {width=40%}
+
 ```{python}
-ui.input_select("aggregation", "Niveau d'aggrégation:",
-                choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"])
+ui.input_slider(
+    id="time_window_p3_b",
+    label="Fenêtre temporelle B",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(min_date, max_date)
+)
 
-@reactive.Calc
-def aggregate_preds_at_level():
-    aggregation_level = input.aggregation().lower()
-    data = npred_code.groupby(aggregation_level)["n_preds"].sum().reset_index()
-    data = data.sort_values(by=aggregation_level)
-    return data
-
-@render_widget
-def agg_barplot():
-    return helpers.make_barplot(
-        aggregate_preds_at_level(),
-        input.aggregation().lower(),
-        "n_preds",
-        yaxis_title="Nombre de liasses"
-    )
+ui.input_checkbox(
+    "checkbox",
+    label="Afficher fenêtre B",
+    value=False,
+)
 ```
 
 ## Row
 
-### Column {width=30%}
-
 ```{python}
-ui.input_select("aggregation_2", "Niveau d'aggrégation:",
-                choices=["Division", "Section"])
-ui.input_select("time_aggregation", "Niveau d'aggrégation temporel:",
-                choices=["Semaine", "Mois"])
-ui.input_slider("n_times", "Fenêtre temporelle", min=1, max=10, value=2)
-```
+#| output: false
+import pandas as pd
 
-### Column
-
-```{python}
-@reactive.Calc
-def aggregate_preds_at_level_time():
-    aggregation_level = input.aggregation_2().lower()
-    data = npred_code_date.copy()
-
-    if input.time_aggregation() == "Semaine":
-        data['date'] = data['date'].dt.strftime('%Y-%U')
-    elif input.time_aggregation() == "Mois":
-        data['date'] = data['date'].dt.strftime('%Y-%m')
-
-    data = npred_code_date.groupby([aggregation_level, 'date'])["n_preds"].sum().reset_index()
-    data = data.sort_values(by=['date', aggregation_level])
-    recent_dates = data['date'].drop_duplicates().nlargest(input.n_times())
-    data = data[data['date'].isin(recent_dates)]
+def nrow_code_date(frame):
+    min_frame, max_frame = frame
+    data = duckdb.sql(
+        f"""
+        SELECT
+            "Response.1.code" as "sous-classe",
+            COUNT(*) AS nrow
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        GROUP BY "Response.1.code"
+        """
+    ).to_df()
+    data["classe"] = data['sous-classe'].str[:-1]
+    data["groupe"] = data['sous-classe'].str[:-2]
+    data["division"] = data['sous-classe'].str[:-3]
+    data["section"] = data['division'].map(constants.NAF_SECTIONS)
     return data
 
+@reactive.Calc
+def p3_df():
+    # TODO: plot percentage per class
+    aggregation_level = input.aggregation_p3().lower()
+
+    data = nrow_code_date(input.time_window_p3_a())
+    data = data.groupby(aggregation_level)["nrow"].sum().reset_index()
+    data["date"] = "A"
+
+    if input.checkbox():
+        data_b = nrow_code_date(input.time_window_p3_b())
+        data_b = data_b.groupby(aggregation_level)["nrow"].sum().reset_index()
+        data_b["date"] = "B"
+
+        data = pd.concat([
+            data,
+            data_b
+        ])
+
+    return data.sort_values(by=["date", aggregation_level])
+```
+
+
+```{python}
 @render_widget
-def agg_time_barplot():
+def plot_code_distr():
     return helpers.make_barplot(
-        aggregate_preds_at_level_time(),
-        input.aggregation_2().lower(),
-        "n_preds",
+        p3_df(),
+        input.aggregation_p3().lower(),
+        "nrow",
         yaxis_title="Nombre de liasses",
         color="date",
         barmode="group"
