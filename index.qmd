@@ -173,7 +173,8 @@ def plot_daily_auto_rates():
 
 ```{python}
 #| context: setup
-#| output: false
+#| title: Nombre de requêtes par semaine
+#| padding: 0
 
 weekly_counts = duckdb.sql(
     """
@@ -184,12 +185,6 @@ weekly_counts = duckdb.sql(
     GROUP BY DATE_TRUNC('week', date)
     """
 ).to_df()
-```
-
-```{python}
-#| context: setup
-#| title: Nombre de requêtes par semaine
-#| padding: 0
 
 helpers.make_barplot(
     weekly_counts,
