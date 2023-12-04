@@ -11,8 +11,6 @@ author: "MLBoss"
 
 import duckdb
 from src import helpers, constants
-from shiny import render, reactive, ui
-from shinywidgets import render_widget
 ```
 
 ```{python}
@@ -68,6 +66,9 @@ dict(
 ### Column {width=25%}
 
 ```{python}
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
 ui.input_slider(
     id="ic_auto_p1",
     label="IC minimum pour codification automatique",
