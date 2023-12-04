@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Optional
+from typing import List, Optional, Union
 
 import duckdb
 import pandas as pd
@@ -38,14 +38,6 @@ def read_all_data(path: str) -> None:
     )
 
 
-def write_all_data_to_parquet() -> None:
-    """
-    Write all log data to a single parquet file for
-    DuckDB-Wasm (Observable).
-    """
-    duckdb.sql("SELECT * FROM data").write_parquet("data/data.parquet")
-
-
 def make_histogram(
     data: pd.DataFrame,
     var_name: str,
@@ -71,6 +63,7 @@ def make_histogram(
     fig.update_layout(
         xaxis_title=xaxis_title,
         yaxis_title=yaxis_title,
+        margin=dict(l=0, r=0, b=0, t=0),
     )
     return fig
 
@@ -83,7 +76,10 @@ def make_barplot(
     xaxis_title: Optional[str] = None,
     opacity: float = 0.7,
     color: str = "#040548",
+    range_color: Optional[List[Union[int, float]]] = None,
+    range_y: Optional[List[Union[int, float]]] = None,
     barmode: str = "relative",
+    legend_title: str = "",
 ):
     """
     Make a barplot for var_x.
@@ -92,20 +88,40 @@ def make_barplot(
         data (pd.DataFrame): Data.
         var_x (str): X variable.
         var_y (str): Count variable.
-        yaxis_title (str): Y axis title.
-        xaxis_title (str): X axis title.
+        yaxis_title (Optional[str]): Y axis title.
+        xaxis_title (Optional[str]): X axis title.
         opacity (float): Opacity.
         color (str): Color or variable.
+        range_color (Optional[List[Union[int, float]]]): Color range.
+        range_y (Optional[List[Union[int, float]]]): Y range.
         barmode (str): Bar mode.
+        legend_title (str): Legend title.
     """
     if is_valid_hex_color(color):
-        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, barmode=barmode)
+        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, range_y=range_y, barmode=barmode)
         fig.update_traces(marker_color=color)
     else:
-        fig = px.bar(data, x=var_x, y=var_count, opacity=opacity, color=color, barmode=barmode)
+        fig = px.bar(
+            data,
+            x=var_x,
+            y=var_count,
+            opacity=opacity,
+            color=color,
+            color_continuous_scale="rdylgn",
+            range_color=range_color,
+            range_y=range_y,
+            barmode=barmode,
+        )
+        fig.update_layout(
+            coloraxis_colorbar=dict(
+                title=legend_title,
+            )
+        )
+
     fig.update_layout(
         xaxis_title=xaxis_title,
         yaxis_title=yaxis_title,
+        margin=dict(l=0, r=0, b=0, t=0),
     )
     return fig
 

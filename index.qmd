@@ -3,138 +3,179 @@ title: "Dashboard Test"
 author: "MLBoss"
 ---
 
-# Python
+# Requêtes et taux de codification
 
 ```{python}
 #| context: setup
 #| output: false
 import duckdb
-from src import helpers
-from src import constants
+from src import helpers, constants
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
 
 helpers.init_duckdb_s3()
 helpers.read_all_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
-helpers.write_all_data_to_parquet()
-```
 
-## Row
-
-```{python}
-#| context: setup
-#| output: false
-auto_percentages = duckdb.sql(
+min_max_dates = duckdb.sql(
     """
     SELECT
-        data."Query.Auto",
-        COUNT(*) AS Occurrences,
-        COUNT(*) * 100.0 / (SELECT COUNT(*) FROM data) AS Percentage
-    FROM
-        data
-    GROUP BY
-        data."Query.Auto";
+        min(date) as min_date,
+        max(date) as max_date
+    FROM data
     """
-)
+).to_df()
+min_date = min_max_dates["min_date"][0]
+max_date = min_max_dates["max_date"][0]
 ```
+
+## Row {height=20%}
+
+### Column {width=50%}
 
 ```{python}
 #| context: setup
 #| output: false
-percentage_high_ic = duckdb.sql(
-    """
-    SELECT
-        COUNT(*) AS TotalRows,
-        (COUNT(
-            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
-            ) * 100.0 / COUNT(*)
-        ) AS PercentageHighIC
-    FROM data;
-    """
-).to_df().to_dict()
-```
 
-```{python}
-#| context: setup
-#| component: valuebox
-#| title: "Nombre de liasses"
-dict(
-    icon = "folder2-open",
-    color = "secondary",
-    value = percentage_high_ic["TotalRows"][0]
-)
-```
-
-
-```{python}
-#| context: setup
-#| component: valuebox
-#| title: "Pourcentage de codification automatique"
-dict(
-    icon = "file-check",
-    color = "success",
-    value = f"""{round(percentage_high_ic["PercentageHighIC"][0],2)}%"""
-)
-```
-
-## Row
-
-```{python}
-#| context: setup
-#| output: false
-percentage_high_ic_day = duckdb.sql(
+daily_counts = duckdb.sql(
     """
     SELECT
         date,
-        COUNT(*) AS TotalRows,
-        (COUNT(
-            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
-            ) * 100.0 / COUNT(*)
-        ) AS PercentageHighIC
+        COUNT(*) AS nrow,
     FROM data
-    GROUP BY date;
+    GROUP BY date
     """
 ).to_df()
 ```
 
 ```{python}
 #| context: setup
+#| component: valuebox
+#| title: "Nombre de liasses"
+
+dict(
+    icon = "folder2-open",
+    color = "secondary",
+    value = daily_counts["nrow"].sum()
+)
+```
+
+### Column {width=25%}
+
+```{python}
+ui.input_slider(
+    id="ic_auto_p1",
+    label="IC minimum pour codification automatique",
+    min=0.0,
+    max=1.0,
+    value=0.8
+)
+```
+
+```{python}
+#| output: false
+
+@reactive.Calc
+def auto_rate():
+    return duckdb.sql(
+        f"""
+        SELECT
+            COUNT(*) AS TotalRows,
+            (COUNT(
+                CASE WHEN data."Response.IC" > {input.ic_auto_p1()} THEN 1 END
+                ) * 100.0 / COUNT(*)
+            ) AS PercentageHighIC
+        FROM data;
+        """
+    ).to_df().to_dict()
+```
+
+### Column {width=25%}
+
+```{python}
+
+@render.ui
+def auto_rate_valuebox():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder-check" viewBox="0 0 16 16">
+            <path d="m.5 3 .04.87a1.99 1.99 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09L14.54 8h1.005l.256-2.819A2 2 0 0 0 13.81 3H9.828a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 6.172 1H2.5a2 2 0 0 0-2 2m5.672-1a1 1 0 0 1 .707.293L7.586 3H2.19c-.24 0-.47.042-.683.12L1.5 2.98a1 1 0 0 1 1-.98h3.672z"></path>
+            <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.707 0l-1.5-1.5a.5.5 0 0 1 .707-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0z"></path>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Pourcentage de codif. auto.",
+        value=f"{round(auto_rate()['PercentageHighIC'][0], 2)}%",
+        theme="green",
+        showcase=icon,
+    )
+```
+
+## Row {height=40%}
+
+```{python}
+#| output: false
+
+@reactive.Calc
+def daily_auto_rates():
+    return duckdb.sql(
+        f"""
+        SELECT
+            date,
+            (COUNT(
+                CASE WHEN data."Response.IC" > {input.ic_auto_p1()} THEN 1 END
+                ) / COUNT(*)
+            ) AS PercentageHighIC
+        FROM data
+        GROUP BY date;
+        """
+    ).to_df()
+```
+
+```{python}
+#| context: setup
 #| title: Nombre de requêtes par jour
 #| padding: 0
+
 helpers.make_barplot(
-    percentage_high_ic_day,
+    daily_counts,
     "date",
-    "TotalRows",
-    yaxis_title="Nombre de requêtes")
+    "nrow",
+)
 ```
 
 
 ```{python}
-#| context: setup
 #| title: "Pourcentage de codification automatique par jour"
 #| padding: 0
-helpers.make_barplot(
-    percentage_high_ic_day,
-    "date",
-    "PercentageHighIC",
-    color="PercentageHighIC",
-    yaxis_title="Pourcentage de codification automatique")
+
+@render_widget
+def plot_daily_auto_rates():
+    return helpers.make_barplot(
+        daily_auto_rates(),
+        "date",
+        "PercentageHighIC",
+        color="PercentageHighIC",
+        range_color=[0, 1],
+        range_y=[0, 1],
+    )
 ```
 
-## Row
+## Row {height=40%}
 
 ```{python}
 #| context: setup
 #| output: false
-percentage_high_ic_week = duckdb.sql(
+
+weekly_counts = duckdb.sql(
     """
     SELECT
         DATE_TRUNC('week', date) AS week_start,
-        COUNT(*) AS TotalRows,
-        (COUNT(
-            CASE WHEN data."Response.IC" > 0.8 THEN 1 END
-            ) * 100.0 / COUNT(*)
-        ) AS PercentageHighIC
+        COUNT(*) AS nrow,
     FROM data
-    GROUP BY DATE_TRUNC('week', date);
+    GROUP BY DATE_TRUNC('week', date)
     """
 ).to_df()
 ```
@@ -143,44 +184,165 @@ percentage_high_ic_week = duckdb.sql(
 #| context: setup
 #| title: Nombre de requêtes par semaine
 #| padding: 0
+
 helpers.make_barplot(
-    percentage_high_ic_week,
+    weekly_counts,
     "week_start",
-    "TotalRows",
-    "Nombre de requêtes")
+    "nrow",
+)
 ```
 
 
 ```{python}
-#| context: setup
+#| output: false
+
+@reactive.Calc
+def weekly_auto_rates():
+    return duckdb.sql(
+        f"""
+        SELECT
+            DATE_TRUNC('week', date) AS week_start,
+            (COUNT(
+                CASE WHEN data."Response.IC" > {input.ic_auto_p1()} THEN 1 END
+                ) / COUNT(*)
+            ) AS PercentageHighIC
+        FROM data
+        GROUP BY DATE_TRUNC('week', date);
+        """
+    ).to_df()
+```
+
+```{python}
 #| title: "Pourcentage de codification automatique par semaine"
 #| padding: 0
-helpers.make_barplot(
-    percentage_high_ic_week,
-    "week_start",
-    "PercentageHighIC",
-    color="PercentageHighIC",
-    yaxis_title="Pourcentage de codification automatique")
+
+@render_widget
+def plot_weekly_auto_rates():
+    return helpers.make_barplot(
+        weekly_auto_rates(),
+        "week_start",
+        "PercentageHighIC",
+        color="PercentageHighIC",
+        range_color=[0, 1],
+        range_y=[0, 1],
+    )
 ```
 
-### Column {width=100%}
+# Indices de confiance
+
+## Row {height=20%}
+
+### Column
 
 ```{python}
-#| context: setup
+ui.input_slider(
+    id="time_window_p2",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(min_date, max_date)
+)
+```
+
+## Row {height=40%}
+
+```{python}
 #| output: false
-data = duckdb.sql("SELECT * FROM data").to_df()
+
+@reactive.Calc
+def get_ic_time_frame():
+    min_frame, max_frame = input.time_window_p2()
+    ic_df = duckdb.sql(
+        f"""
+        SELECT
+            "Response.IC"
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+    return ic_df
 ```
 
 ```{python}
-#| context: setup
 #| title: Distribution des indices de confiances
 #| padding: 0
-helpers.make_histogram(
-    data,
-    "Response.IC",
-    xaxis_title="Indice de confiance",
-    yaxis_title="Nombre de liasses",
+
+@render_widget
+def plot_ic_histogram():
+    return helpers.make_histogram(
+        get_ic_time_frame(),
+        "Response.IC",
+        yaxis_title="Nombre de liasses",
+    )
+```
+
+## Row
+
+### Column {width=20%}
+
+```{python}
+ui.input_select(
+    "aggregation_p2",
+    "Niveau d'aggrégation:",
+    choices=["Section", "Division"]
 )
+
+ui.input_slider(
+    id="ic_auto_p2",
+    label="IC minimum pour codification automatique",
+    min=0.0,
+    max=1.0,
+    value=0.8
+)
+```
+
+### Column {width=80%}
+
+```{python}
+#| output: false
+
+@reactive.Calc
+def codification_rates():
+    min_frame, max_frame = input.time_window_p2()
+    ic_code_df = duckdb.sql(
+        f"""
+        SELECT
+            "Response.IC",
+            "Response.1.code" as "sous-classe",
+            CASE
+                WHEN "Response.IC" > {input.ic_auto_p2()} THEN 1
+                ELSE 0
+            END AS "auto"
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+
+    ic_code_df["division"] = ic_code_df['sous-classe'].str[:-3]
+    ic_code_df["section"] = ic_code_df['division'].map(constants.NAF_SECTIONS)
+
+    aggregation_level = input.aggregation_p2().lower()
+    data = ic_code_df.groupby(aggregation_level)["auto"].mean().reset_index()
+    data = data.sort_values(by=aggregation_level)
+    return data
+```
+
+```{python}
+#| title: Taux de codification automatique
+#| padding: 0
+
+@render_widget
+def plot_auto_percentages():
+    return helpers.make_barplot(
+        data=codification_rates(),
+        var_x=input.aggregation_p2().lower(),
+        xaxis_title=input.aggregation_p2(),
+        var_count="auto",
+        color="auto",
+        range_color=[0, 1],
+        range_y=[0, 1],
+    )
 ```
 
 # Codes prédits
@@ -220,13 +382,6 @@ npred_code_date = duckdb.sql(
 ).to_df()
 npred_code_date["division"] = npred_code_date['sous-classe'].str[:-3]
 npred_code_date["section"] = npred_code_date['division'].map(constants.NAF_SECTIONS)
-```
-
-```{python}
-#| context: setup
-#| output: false
-from shiny import render, reactive, ui
-from shinywidgets import render_widget
 ```
 
 ```{python}
