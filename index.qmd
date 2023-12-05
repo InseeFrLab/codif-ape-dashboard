@@ -114,6 +114,7 @@ def auto_rate():
 ### Column {width=25%}
 
 ```{python}
+#| padding: 0
 
 @render.ui
 def auto_rate_valuebox():
@@ -158,7 +159,6 @@ def daily_auto_rates():
 ```{python}
 #| context: setup
 #| title: Nombre de requêtes par jour
-#| padding: 0
 
 helpers.make_barplot(
     daily_counts,
@@ -170,7 +170,6 @@ helpers.make_barplot(
 
 ```{python}
 #| title: "Pourcentage de codification automatique par jour"
-#| padding: 0
 
 @render_widget
 def plot_daily_auto_rates():
@@ -189,7 +188,6 @@ def plot_daily_auto_rates():
 ```{python}
 #| context: setup
 #| title: Nombre de requêtes par semaine
-#| padding: 0
 
 helpers.make_barplot(
     weekly_counts,
@@ -234,11 +232,9 @@ def plot_weekly_auto_rates():
     )
 ```
 
-# Indices de confiance
+# Indices de confiance I
 
 ## Row {height=20%}
-
-### Column
 
 ```{python}
 ui.input_slider(
@@ -251,7 +247,7 @@ ui.input_slider(
 )
 ```
 
-## Row {height=40%}
+## Row {height=80%}
 
 ```{python}
 #| output: false
@@ -272,7 +268,6 @@ def get_ic_time_frame():
 
 ```{python}
 #| title: Distribution des indices de confiances
-#| padding: 0
 
 @render_widget
 def plot_ic_histogram():
@@ -283,23 +278,44 @@ def plot_ic_histogram():
     )
 ```
 
-## Row
+# Indices de confiance II
+
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p3",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(min_date, max_date)
+)
+```
+
+## Row {height=80%}
 
 ### Column {width=20%}
 
 ```{python}
 ui.input_select(
-    "aggregation_p2",
+    "aggregation_p3",
     "Niveau d'aggrégation:",
     choices=["Section", "Division"]
 )
 
 ui.input_slider(
-    id="ic_auto_p2",
+    id="ic_auto_p3",
     label="IC minimum pour codification automatique",
     min=0.0,
     max=1.0,
     value=0.8
+)
+
+ui.input_radio_buttons(
+    "radio",
+    "Ordonner le graphique par:",
+    {"1": "Code", "2": "Nombre de liasses", "3": "Taux de codification automatique"},
 )
 ```
 
@@ -310,16 +326,17 @@ ui.input_slider(
 
 @reactive.Calc
 def codification_rates():
-    min_frame, max_frame = input.time_window_p2()
+    min_frame, max_frame = input.time_window_p3()
     ic_code_df = duckdb.sql(
         f"""
         SELECT
             "Response.IC",
             "Response.1.code" as "sous-classe",
             CASE
-                WHEN "Response.IC" > {input.ic_auto_p2()} THEN 1
+                WHEN "Response.IC" > {input.ic_auto_p3()} THEN 1
                 ELSE 0
-            END AS "auto"
+            END AS "auto",
+            1 as nrow
         FROM data
         WHERE date >= '{min_frame}' AND date <= '{max_frame}'
         """
@@ -328,26 +345,34 @@ def codification_rates():
     ic_code_df["division"] = ic_code_df['sous-classe'].str[:-3]
     ic_code_df["section"] = ic_code_df['division'].map(constants.NAF_SECTIONS)
 
-    aggregation_level = input.aggregation_p2().lower()
-    data = ic_code_df.groupby(aggregation_level)["auto"].mean().reset_index()
-    data = data.sort_values(by=aggregation_level)
+    aggregation_level = input.aggregation_p3().lower()
+    data = ic_code_df.groupby(aggregation_level).agg({
+        "auto": "mean",
+        "nrow": "sum"
+    }).reset_index()
+    if input.radio() == "1":
+        data = data.sort_values(by=aggregation_level)
+    elif input.radio() == "2":
+        data = data.sort_values(by="nrow")
+    else:
+        data = data.sort_values(by="auto")
+
     return data
 ```
 
 ```{python}
-#| title: Taux de codification automatique
+#| title: Nombre de liasses et taux de codification automatique au niveau d'aggrégation choisi
 #| padding: 0
 
 @render_widget
 def plot_auto_percentages():
     return helpers.make_barplot(
         data=codification_rates(),
-        var_x=input.aggregation_p2().lower(),
-        xaxis_title=input.aggregation_p2(),
-        var_count="auto",
+        var_x=input.aggregation_p3().lower(),
+        xaxis_title=input.aggregation_p3(),
+        var_count="nrow",
         color="auto",
         range_color=[0, 1],
-        range_y=[0, 1],
     )
 ```
 
@@ -358,13 +383,14 @@ def plot_auto_percentages():
 ### Column {width=40%}
 
 ```{python}
+
 ui.input_slider(
-    id="time_window_p3_a",
+    id="time_window_p4_a",
     label="Fenêtre temporelle A",
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date)
+    value=(min_date, max_date),
 )
 ```
 
@@ -373,7 +399,7 @@ ui.input_slider(
 
 ```{python}
 ui.input_select(
-    "aggregation_p3",
+    "aggregation_p4",
     "Niveau d'aggrégation:",
     choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"]
 )
@@ -382,13 +408,14 @@ ui.input_select(
 ### Column {width=40%}
 
 ```{python}
+
 ui.input_slider(
-    id="time_window_p3_b",
+    id="time_window_p4_b",
     label="Fenêtre temporelle B",
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date)
+    value=(min_date, max_date),
 )
 
 ui.input_checkbox(
@@ -423,17 +450,18 @@ def nrow_code_date(frame):
     return data
 
 @reactive.Calc
-def p3_df():
-    # TODO: plot percentage per class
-    aggregation_level = input.aggregation_p3().lower()
+def p4_df():
+    aggregation_level = input.aggregation_p4().lower()
 
-    data = nrow_code_date(input.time_window_p3_a())
+    data = nrow_code_date(input.time_window_p4_a())
     data = data.groupby(aggregation_level)["nrow"].sum().reset_index()
+    data["rate"] = data["nrow"] / data["nrow"].sum()
     data["date"] = "A"
 
     if input.checkbox():
-        data_b = nrow_code_date(input.time_window_p3_b())
+        data_b = nrow_code_date(input.time_window_p4_b())
         data_b = data_b.groupby(aggregation_level)["nrow"].sum().reset_index()
+        data_b["rate"] = data_b["nrow"] / data_b["nrow"].sum()
         data_b["date"] = "B"
 
         data = pd.concat([
@@ -446,14 +474,67 @@ def p3_df():
 
 
 ```{python}
+#| title: Taux de codification par code au niveau d'aggrégation choisi
+
 @render_widget
 def plot_code_distr():
-    return helpers.make_barplot(
-        p3_df(),
-        input.aggregation_p3().lower(),
-        "nrow",
-        yaxis_title="Nombre de liasses",
+    barplot = helpers.make_barplot(
+        p4_df(),
+        input.aggregation_p4().lower(),
+        "rate",
         color="date",
         barmode="group"
+    )
+    barplot.update_layout(
+        legend_title_text="Fenêtre"
+    )
+    return barplot
+```
+
+# Données
+
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p5",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(min_date, max_date)
+)
+```
+
+## Row {height=80%}
+
+```{python}
+
+@reactive.Calc
+def p5_df():
+    min_frame, max_frame = input.time_window_p5()
+    data = duckdb.sql(
+        f"""
+        SELECT
+            "Query.TEXT_FEATURE" as "text",
+            "Response.IC" as "IC",
+            "Response.1.code" as "sous-classe",
+            "Response.2.code" as "sous-classe-2",
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+    data["classe"] = data['sous-classe'].str[:-1]
+    data["groupe"] = data['sous-classe'].str[:-2]
+    data["division"] = data['sous-classe'].str[:-3]
+    data["section"] = data['division'].map(constants.NAF_SECTIONS)
+
+    return data
+
+@render.data_frame
+def view_data():
+    return render.DataGrid(
+        p5_df(),
+        filters=True
     )
 ```
