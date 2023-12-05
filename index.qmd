@@ -11,6 +11,7 @@ author: "MLBoss"
 
 import duckdb
 from src import helpers, constants
+import datetime
 ```
 
 ```{python}
@@ -30,6 +31,7 @@ min_max_dates = duckdb.sql(
 ).to_df()
 min_date = min_max_dates["min_date"][0]
 max_date = min_max_dates["max_date"][0]
+window_start = max_date - datetime.timedelta(days=7)
 ```
 
 ## Row {height=20%}
@@ -243,7 +245,7 @@ ui.input_slider(
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date)
+    value=(window_start, max_date)
 )
 ```
 
@@ -289,7 +291,7 @@ ui.input_slider(
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date)
+    value=(window_start, max_date)
 )
 ```
 
@@ -390,7 +392,7 @@ ui.input_slider(
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date),
+    value=(window_start, max_date),
 )
 ```
 
@@ -415,7 +417,7 @@ ui.input_slider(
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date),
+    value=(window_start, max_date),
 )
 
 ui.input_checkbox(
@@ -502,7 +504,7 @@ ui.input_slider(
     min=min_date,
     max=max_date,
     time_format="%F",
-    value=(min_date, max_date)
+    value=(window_start, max_date)
 )
 ```
 
@@ -535,6 +537,138 @@ def p5_df():
 def view_data():
     return render.DataGrid(
         p5_df(),
+        filters=True
+    )
+```
+
+# Texte
+
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p6",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date)
+)
+```
+
+## Row {height=20%}
+
+```{python}
+#| output: false
+from collections import Counter
+
+@reactive.Calc
+def language_stats():
+    min_frame, max_frame = input.time_window_p6()
+    data = duckdb.sql(
+        f"""
+        SELECT
+            "Query.TEXT_FEATURE" as "text"
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+
+    # Count words and sentences
+    word_counts = [len(s.split(" ")) for s in data["text"]]
+    sentence_counts = [len(s.split(".")) for s in data["text"]]
+    mean_word_count = sum(word_counts) / len(word_counts)
+    mean_sentence_count = sum(sentence_counts) / len(sentence_counts)
+
+    # Frequent words and sentences
+    words = []
+    for s in data["text"]:
+        words += [word.lower() for word in s.split(" ")]
+
+    frequent_words = Counter(words).most_common(20)
+    frequent_words = pd.DataFrame(
+        frequent_words,
+        columns=["word", "frequency"]
+    )
+    frequent_words["frequency"] /= len(words)
+
+    frequent_texts = Counter(data["text"]).most_common(20)
+    frequent_texts = pd.DataFrame(
+        frequent_texts,
+        columns=["text", "frequency"]
+    )
+    frequent_texts["frequency"] /= len(data["text"])
+
+    return mean_word_count, mean_sentence_count, frequent_words, frequent_texts
+```
+
+### Column
+
+```{python}
+#| padding: 0
+
+@render.ui
+def word_count_valuebox():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-word" viewBox="0 0 16 16">
+            <path d="M5.485 6.879a.5.5 0 1 0-.97.242l1.5 6a.5.5 0 0 0 .967.01L8 9.402l1.018 3.73a.5.5 0 0 0 .967-.01l1.5-6a.5.5 0 0 0-.97-.242l-1.036 4.144-.997-3.655a.5.5 0 0 0-.964 0l-.997 3.655L5.485 6.88z"/>
+            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Nombre moyen de mots par libellé",
+        value=f"{round(language_stats()[0], 2)}",
+        theme="gray",
+        showcase=icon,
+    )
+```
+
+### Column
+
+```{python}
+#| padding: 0
+
+@render.ui
+def sentence_count_valuebox():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-word-fill" viewBox="0 0 16 16">
+            <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M5.485 6.879l1.036 4.144.997-3.655a.5.5 0 0 1 .964 0l.997 3.655 1.036-4.144a.5.5 0 0 1 .97.242l-1.5 6a.5.5 0 0 1-.967.01L8 9.402l-1.018 3.73a.5.5 0 0 1-.967-.01l-1.5-6a.5.5 0 1 1 .97-.242z"/>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Nombre moyen de phrases par libellé",
+        value=f"{round(language_stats()[1], 2)}",
+        theme="blue",
+        showcase=icon,
+    )
+```
+
+## Row {height=60%}
+
+### Column
+
+```{python}
+@render.data_frame
+def view_words():
+    return render.DataGrid(
+        language_stats()[2],
+        filters=True
+    )
+```
+
+### Column
+
+```{python}
+@render.data_frame
+def view_sentences():
+    return render.DataGrid(
+        language_stats()[3],
         filters=True
     )
 ```
