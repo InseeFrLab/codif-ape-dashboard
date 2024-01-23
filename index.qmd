@@ -19,7 +19,7 @@ import datetime
 #| output: false
 
 helpers.init_duckdb_s3()
-helpers.read_all_data("s3://projet-ape/log_files/dashboard_test/**/*.parquet")
+helpers.read_all_data("s3://projet-ape/log_files/dashboard/**/*.parquet")
 
 min_max_dates = duckdb.sql(
     """
