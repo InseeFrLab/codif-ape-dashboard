@@ -30,7 +30,7 @@ jobs:
             # set tag for scheduled build
             type=schedule,pattern=nightly
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to DockerHub
