@@ -5,7 +5,7 @@ ipykernel==6.29.0
 ipywidgets==8.1.1
 nbclient==0.9.0
 nbformat==5.9.2
-shiny==0.6.1.1
+shiny==0.7.1
 shinywidgets==0.2.4
 ruff==0.1.14
 pre-commit==3.6.0
