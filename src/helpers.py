@@ -30,9 +30,10 @@ def read_all_data(path: str) -> None:
     Args:
         path (str): Path to log parquet files.
     """
+    duckdb.sql("ALTER VIEW IF EXISTS test_data RENAME TO data")
     duckdb.sql(
         f"""
-        CREATE OR REPLACE VIEW data
+        CREATE VIEW test_data
         AS SELECT * FROM read_parquet("{path}", hive_partitioning=1)
         """
     )
