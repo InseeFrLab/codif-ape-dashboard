@@ -20,7 +20,7 @@ import datetime
 
 helpers.init_duckdb_s3()
 helpers.read_all_data("s3://projet-ape/log_files/dashboard/**/*.parquet")
-helpers.read_all_data("s3://projet-ape/label-studio/annotation-campaign-2024/NAF2008/dashboard/**/*.parquet")
+helpers.read_all_data("s3://projet-ape/label-studio/annotation-campaign-2024/NAF2008/dashboard/current-model/**/*.parquet")
 
 min_max_dates = duckdb.sql(
     """
