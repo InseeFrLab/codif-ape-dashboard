@@ -8,4 +8,4 @@ nbformat==5.9.2
 shiny==0.7.1
 shinywidgets==0.3.0
 ruff==0.2.1
-pre-commit==3.6.0
+pre-commit==3.7.0
