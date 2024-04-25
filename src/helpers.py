@@ -6,6 +6,7 @@ import duckdb
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 
 
 def init_duckdb_s3() -> None:
@@ -144,3 +145,87 @@ def is_valid_hex_color(color: str) -> bool:
         return True
     else:
         return False
+
+
+def calculate_accuracy_levels(df: pd.DataFrame, threshold: float, mapping: dict, pct: bool) -> dict:
+    """
+    Calculate accuracy levels for each level of the NAF code hierarchy.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing the data.
+        threshold (float): The threshold value for accuracy calculation.
+        mapping (dict): A dictionary mapping NAF codes to their corresponding labels.
+        pct (bool): A flag indicating whether to return accuracy levels as percentages.
+
+    Returns:
+        dict: A dictionary containing the accuracy levels for each level of the NAF code hierarchy.
+    """
+
+    naf_names = ['Sous-classe', 'Classe', 'Groupe', 'Division', 'Section']
+    accuracy_levels = {}
+
+    # Calculate accuracy levels for each level
+    for level in range(5, 1, -1):
+
+        # Calculate accuracy level
+        accuracy = np.where(df["Response.IC"] > threshold, (df["apet_manual"].str[:level] == df["Response.1.code"].str[:level]).astype(int), 1).mean()
+
+        # Store accuracy level in dictionary
+        accuracy_levels[naf_names[5-level]] = accuracy
+
+    df = df.copy()
+    # Calculate accuracy level for level 1
+    df['ground_truth_lvl1'] = df['apet_manual'].str[:2].map(mapping)
+    df['pred_lvl1'] = df['Response.1.code'].str[:2].map(mapping)
+    accuracy = np.where(df["Response.IC"] > threshold, (df["ground_truth_lvl1"] == df["pred_lvl1"]).astype(int), 1).mean()
+    accuracy_levels[naf_names[-1]] = accuracy
+
+    accuracy_levels = pd.DataFrame.from_dict(accuracy_levels, orient='index').reset_index()
+
+    if pct:
+        accuracy_levels[0] = accuracy_levels[0] * 100
+
+    return accuracy_levels.rename(columns={"index": "Level", 0 : "accuracy"})
+
+
+def calculate_topk_accuracy(df: pd.DataFrame, threshold: float, pct: bool) -> dict:
+    """
+    Calculate the top-k accuracy levels for a given DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        threshold (float): The threshold value for the accuracy calculation.
+        pct (bool): Flag indicating whether to return the accuracy as a percentage.
+
+    Returns:
+        dict: A dictionary containing the top-k accuracy levels.
+
+    Raises:
+        None
+
+    Examples:
+        >>> df = pd.DataFrame(...)
+        >>> calculate_topk_accuracy(df, 0.5, True)
+    """
+    accuracy_topk = {}
+
+    # Calculate accuracy levels for each k value
+    for k in range(1, 6):
+        # Calculate accuracy level
+        if k == 1:
+            accuracy = np.where(df["Response.IC"] > threshold, df["result"].astype(int), 1).mean()
+        else:
+            past_topk = [df[f"Response.{i}.code"] for i in range(1, k)]
+            # Check if any of the top k predicted labels matches the manual label
+            matches_manual = pd.concat([df["apet_manual"] == code for code in past_topk], axis=1).any(axis=1)
+            accuracy = np.where(df["Response.IC"] > threshold, matches_manual | (df["apet_manual"] == df[f"Response.{k}.code"]), 1).astype(int).mean()
+
+        # Store accuracy level in dictionary
+        accuracy_topk[f"Top {k}"] = accuracy
+
+    accuracy_topk = pd.DataFrame.from_dict(accuracy_topk, orient='index').reset_index()
+
+    if pct:
+        accuracy_topk[0] = accuracy_topk[0] * 100
+
+    return accuracy_topk.rename(columns={"index":"Top k", 0 : "accuracy"})
