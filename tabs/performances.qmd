@@ -39,7 +39,7 @@ def get_accuracy_topk():
     return helpers.calculate_topk_accuracy(golden_test, threshold=input.threshold(), pct=True)
 
 @reactive.Calc
-def auto_rate():
+def auto_rate_test():
     return duckdb.sql(
         f"""
         SELECT
@@ -65,7 +65,7 @@ def get_accuracy_topk_reprise():
 
 ## Row {height=20%}
 
-### Column {width=16%}
+### Column {width=25%}
 
 ```{python}
 #| padding: 0
@@ -80,7 +80,7 @@ ui.input_slider(
 ```
 
 
-### Column {width=28%}
+### Column {width=25%}
 
 ```{python}
 #| context: setup
@@ -94,7 +94,7 @@ dict(
 )
 ```
 
-### Column {width=28%}
+### Column {width=25%}
 
 ```{python}
 #| padding: 0
@@ -112,13 +112,13 @@ def auto_rate_test_valuebox():
 
     return ui.value_box(
         title="Pourcentage de codif. auto.",
-        value=f"{round(auto_rate()['PercentageHighIC'][0], 2)}%",
+        value=f"{round(auto_rate_test()['PercentageHighIC'][0], 2)}%",
         theme="green",
         showcase=icon,
     )
 ```
 
-### Column {width=28%}
+### Column {width=25%}
 
 
 ```{python}
@@ -141,12 +141,13 @@ def accuracy_valuebox():
     )
 ```
 
-## Row {height=28%}
+## Row {height=80%}
 
-### Column {width=70%}
+### Column {width=50%}
 
 ```{python}
 #| title: "Distribution des indices de confiance en fonction des résultats"
+#| padding: 0
 
 @render_widget
 def plot_IC():
@@ -154,41 +155,17 @@ def plot_IC():
                 yaxis_title=None,
                 legend_title=None,
                 barmode="overlay",
-                color_discrete_sequence=["#003299", "#FFB400"],
+                color_discrete_sequence=["#003299", "#FF4B00"],
                 nbins=int(1/0.005))
 ```
 
 
-### Column {width=30%}
 
-```{python}
-#| padding: 0
-
-@render.ui
-def auto_rate_test_valuebox2():
-    icon = ui.HTML(
-        """
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder-check" viewBox="0 0 16 16">
-            <path d="m.5 3 .04.87a1.99 1.99 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09L14.54 8h1.005l.256-2.819A2 2 0 0 0 13.81 3H9.828a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 6.172 1H2.5a2 2 0 0 0-2 2m5.672-1a1 1 0 0 1 .707.293L7.586 3H2.19c-.24 0-.47.042-.683.12L1.5 2.98a1 1 0 0 1 1-.98h3.672z"></path>
-            <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.707 0l-1.5-1.5a.5.5 0 0 1 .707-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0z"></path>
-        </svg>
-        """
-    )
-
-    return ui.value_box(
-        title="Pourcentage de codif. auto.",
-        value=f"{round(auto_rate()['PercentageHighIC'][0], 2)}%",
-        theme="red",
-        showcase=icon,
-    )
-```
-
-## Row {height=26%}
-
-### Column {width=50%}
+### Column {width=25%}
 
 ```{python}
 #| title: "Taux de performance à différents niveaux de la nomenclature"
+#| padding: 0
 
 @render_widget
 def plot_accuracy_level():
@@ -198,35 +175,15 @@ def plot_accuracy_level():
         "accuracy",
         color="#003299",
         opacity=1,
-        range_y=[40, 100],
-        show_values= True,
-    )
-```
-
-### Column {width=50%}
-
-```{python}
-#| title: "Taux de performance parmi les K premiers echos"
-
-@render_widget
-def plot_accuracy_topk():
-    return helpers.make_barplot(
-        get_accuracy_topk(),
-        "Top k",
-        "accuracy",
-        color="#003299",
-        opacity=1,
         range_y=[70, 100],
         show_values= True,
     )
 ```
 
-## Row {height=26%}
-
-### Column {width=50%}
-
+#### Row
 ```{python}
-#| title: "Taux de performance pour les liasse en reprise"
+#| title: "Taux de performance pour les liasses en reprise"
+#| padding: 0
 
 @render_widget
 def plot_accuracy_level_reprise():
@@ -241,10 +198,31 @@ def plot_accuracy_level_reprise():
     )
 ```
 
-### Column {width=50%}
+
+### Column {width=25%}
 
 ```{python}
-#| title: "Taux de performance pour les liasse en reprise sur les K premiers echos"
+#| title: "Taux de performance parmi les K premiers echos"
+#| padding: 0
+
+@render_widget
+def plot_accuracy_topk():
+    return helpers.make_barplot(
+        get_accuracy_topk(),
+        "Top k",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[70, 100],
+        show_values= True,
+    )
+```
+
+#### Row
+
+```{python}
+#| title: "Taux de performance pour les liasses en reprise sur les K premiers echos"
+#| padding: 0
 
 @render_widget
 def plot_accuracy_topk_reprise():
@@ -254,7 +232,7 @@ def plot_accuracy_topk_reprise():
         "accuracy",
         color="#003299",
         opacity=1,
-        range_y=[40, 100],
+        range_y=[30, 100],
         show_values= True,
     )
 ```

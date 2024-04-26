@@ -1,6 +1,6 @@
 ---
-title: "Dashboard Test"
-author: "MLBoss"
+title: "Dashboard Monitoring Codification APE"
+author: "RIAS/SSP-Lab"
 ---
 
 ```{python}
