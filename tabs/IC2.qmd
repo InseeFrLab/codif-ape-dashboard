@@ -1,0 +1,97 @@
+
+
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p3",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date)
+)
+```
+
+## Row {height=80%}
+
+### Column {width=20%}
+
+```{python}
+ui.input_select(
+    "aggregation_p3",
+    "Niveau d'aggrégation:",
+    choices=["Section", "Division"]
+)
+
+ui.input_slider(
+    id="ic_auto_p3",
+    label="IC minimum pour codification automatique",
+    min=0.0,
+    max=1.0,
+    value=0.8
+)
+
+ui.input_radio_buttons(
+    "radio",
+    "Ordonner le graphique par:",
+    {"1": "Code", "2": "Nombre de liasses", "3": "Taux de codification automatique"},
+)
+```
+
+### Column {width=80%}
+
+```{python}
+#| output: false
+
+@reactive.Calc
+def codification_rates():
+    min_frame, max_frame = input.time_window_p3()
+    ic_code_df = duckdb.sql(
+        f"""
+        SELECT
+            "Response.IC",
+            "Response.1.code" as "sous-classe",
+            CASE
+                WHEN "Response.IC" > {input.ic_auto_p3()} THEN 1
+                ELSE 0
+            END AS "auto",
+            1 as nrow
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+
+    ic_code_df["division"] = ic_code_df['sous-classe'].str[:-3]
+    ic_code_df["section"] = ic_code_df['division'].map(constants.NAF_SECTIONS)
+
+    aggregation_level = input.aggregation_p3().lower()
+    data = ic_code_df.groupby(aggregation_level).agg({
+        "auto": "mean",
+        "nrow": "sum"
+    }).reset_index()
+    if input.radio() == "1":
+        data = data.sort_values(by=aggregation_level)
+    elif input.radio() == "2":
+        data = data.sort_values(by="nrow")
+    else:
+        data = data.sort_values(by="auto")
+
+    return data
+```
+
+```{python}
+#| title: Nombre de liasses et taux de codification automatique au niveau d'aggrégation choisi
+#| padding: 0
+
+@render_widget
+def plot_auto_percentages():
+    return helpers.make_barplot(
+        data=codification_rates(),
+        var_x=input.aggregation_p3().lower(),
+        xaxis_title=input.aggregation_p3(),
+        var_count="nrow",
+        color="auto",
+        range_color=[0, 1],
+    )
+```

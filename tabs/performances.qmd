@@ -1,0 +1,260 @@
+
+```{python}
+#| context: setup
+#| output: false
+golden_test = duckdb.sql(
+    """
+    SELECT
+        apet_manual,
+        "Response.IC",
+        "Response.1.code",
+        "Response.2.code",
+        "Response.3.code",
+        "Response.4.code",
+        "Response.5.code",
+        CASE
+            WHEN apet_manual = "Response.1.code" THEN TRUE
+            ELSE FALSE
+        END as result
+    FROM data_annotated
+    """
+).to_df()
+```
+
+
+
+
+```{python}
+#| output: false
+
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
+@reactive.Calc
+def get_accuracy_level():
+    return helpers.calculate_accuracy_levels(golden_test, threshold=input.threshold(), mapping=constants.NAF_SECTIONS, pct=True)
+
+@reactive.Calc
+def get_accuracy_topk():
+    return helpers.calculate_topk_accuracy(golden_test, threshold=input.threshold(), pct=True)
+
+@reactive.Calc
+def auto_rate():
+    return duckdb.sql(
+        f"""
+        SELECT
+            COUNT(*) AS TotalRows,
+            (COUNT(
+                CASE WHEN data_annotated."Response.IC" > {input.threshold()} THEN 1 END
+                ) * 100.0 / COUNT(*)
+            ) AS PercentageHighIC
+        FROM data_annotated;
+        """
+    ).to_df().to_dict()
+
+@reactive.Calc
+def get_accuracy_level_reprise():
+    return helpers.calculate_accuracy_levels(golden_test[golden_test["Response.IC"]<= input.threshold()], threshold=0, mapping=constants.NAF_SECTIONS, pct=True)
+
+@reactive.Calc
+def get_accuracy_topk_reprise():
+    return helpers.calculate_topk_accuracy(golden_test[golden_test["Response.IC"]<= input.threshold()], threshold=0, pct=True)
+
+```
+
+
+## Row {height=20%}
+
+### Column {width=16%}
+
+```{python}
+#| padding: 0
+
+ui.input_slider(
+    id="threshold",
+    label="IC minimum pour codification automatique",
+    min=0.0,
+    max=1.0,
+    value=0.8
+)
+```
+
+
+### Column {width=28%}
+
+```{python}
+#| context: setup
+#| component: valuebox
+#| title: "Nombre de liasses"
+
+dict(
+    icon = "folder2-open",
+    color = "secondary",
+    value = golden_test.shape[0]
+)
+```
+
+### Column {width=28%}
+
+```{python}
+#| padding: 0
+
+@render.ui
+def auto_rate_test_valuebox():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder-check" viewBox="0 0 16 16">
+            <path d="m.5 3 .04.87a1.99 1.99 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09L14.54 8h1.005l.256-2.819A2 2 0 0 0 13.81 3H9.828a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 6.172 1H2.5a2 2 0 0 0-2 2m5.672-1a1 1 0 0 1 .707.293L7.586 3H2.19c-.24 0-.47.042-.683.12L1.5 2.98a1 1 0 0 1 1-.98h3.672z"></path>
+            <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.707 0l-1.5-1.5a.5.5 0 0 1 .707-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0z"></path>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Pourcentage de codif. auto.",
+        value=f"{round(auto_rate()['PercentageHighIC'][0], 2)}%",
+        theme="green",
+        showcase=icon,
+    )
+```
+
+### Column {width=28%}
+
+
+```{python}
+#| padding: 0
+
+@render.ui
+def accuracy_valuebox():
+    icon = ui.HTML(
+        """
+    <svg height="64px" width="64px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 501.551 501.551" xml:space="preserve" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <polygon style="fill:#FFD15C;" points="238.237,274.808 170.318,460.8 155.69,501.551 82.547,501.551 108.669,428.408 164.049,274.808 "></polygon> <polygon style="fill:#FFD15C;" points="419.004,501.551 345.861,501.551 331.233,460.8 263.314,274.808 337.502,274.808 392.882,428.408 "></polygon> </g> <g> <path style="fill:#F8B64C;" d="M164.049,274.808h74.188L171.363,460.8c-21.943-7.314-42.841-18.808-62.694-32.392L164.049,274.808z "></path> <path style="fill:#F8B64C;" d="M392.882,428.408c-18.808,13.584-39.706,24.033-62.694,32.392l-66.873-185.992h74.188 L392.882,428.408z"></path> </g> <circle style="fill:#FF7058;" cx="250.776" cy="229.878" r="229.878"></circle> <circle style="fill:#FFFFFF;" cx="250.776" cy="229.878" r="180.767"></circle> <circle style="fill:#FF7058;" cx="250.776" cy="229.878" r="132.702"></circle> <circle style="fill:#FFFFFF;" cx="250.776" cy="229.878" r="84.637"></circle> <circle style="fill:#FF7058;" cx="250.776" cy="229.878" r="36.571"></circle> <path style="fill:#40596B;" d="M424.229,85.682l-167.184,149.42H256l-10.449-10.449v-1.045L412.735,73.143h1.045l9.404,10.449 C424.229,84.637,424.229,84.637,424.229,85.682z"></path> <g> <polygon style="fill:#334A5E;" points="401.241,96.131 340.637,150.465 332.278,106.58 392.882,52.245 "></polygon> <polygon style="fill:#334A5E;" points="383.478,163.004 444.082,109.714 401.241,96.131 340.637,150.465 "></polygon> </g> </g></svg>
+        """
+
+    )
+
+    return ui.value_box(
+        title="Taux de bon codage",
+        value=f"{round(get_accuracy_level()['accuracy'][0], 2)}%",
+        theme="green",
+        showcase=icon,
+    )
+```
+
+## Row {height=28%}
+
+### Column {width=70%}
+
+```{python}
+#| title: "Distribution des indices de confiance en fonction des résultats"
+
+@render_widget
+def plot_IC():
+    return helpers.plot_IC_distrib(golden_test, "Response.IC", "result", vline=input.threshold(),xaxis_title=None,
+                yaxis_title=None,
+                legend_title=None,
+                barmode="overlay",
+                color_discrete_sequence=["#003299", "#FFB400"],
+                nbins=int(1/0.005))
+```
+
+
+### Column {width=30%}
+
+```{python}
+#| padding: 0
+
+@render.ui
+def auto_rate_test_valuebox2():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder-check" viewBox="0 0 16 16">
+            <path d="m.5 3 .04.87a1.99 1.99 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09L14.54 8h1.005l.256-2.819A2 2 0 0 0 13.81 3H9.828a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 6.172 1H2.5a2 2 0 0 0-2 2m5.672-1a1 1 0 0 1 .707.293L7.586 3H2.19c-.24 0-.47.042-.683.12L1.5 2.98a1 1 0 0 1 1-.98h3.672z"></path>
+            <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.707 0l-1.5-1.5a.5.5 0 0 1 .707-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0z"></path>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Pourcentage de codif. auto.",
+        value=f"{round(auto_rate()['PercentageHighIC'][0], 2)}%",
+        theme="red",
+        showcase=icon,
+    )
+```
+
+## Row {height=26%}
+
+### Column {width=50%}
+
+```{python}
+#| title: "Taux de performance à différents niveaux de la nomenclature"
+
+@render_widget
+def plot_accuracy_level():
+    return helpers.make_barplot(
+        get_accuracy_level(),
+        "Level",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[40, 100],
+        show_values= True,
+    )
+```
+
+### Column {width=50%}
+
+```{python}
+#| title: "Taux de performance parmi les K premiers echos"
+
+@render_widget
+def plot_accuracy_topk():
+    return helpers.make_barplot(
+        get_accuracy_topk(),
+        "Top k",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[70, 100],
+        show_values= True,
+    )
+```
+
+## Row {height=26%}
+
+### Column {width=50%}
+
+```{python}
+#| title: "Taux de performance pour les liasse en reprise"
+
+@render_widget
+def plot_accuracy_level_reprise():
+    return helpers.make_barplot(
+        get_accuracy_level_reprise(),
+        "Level",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[30, 100],
+        show_values=True,
+    )
+```
+
+### Column {width=50%}
+
+```{python}
+#| title: "Taux de performance pour les liasse en reprise sur les K premiers echos"
+
+@render_widget
+def plot_accuracy_topk_reprise():
+    return helpers.make_barplot(
+        get_accuracy_topk_reprise(),
+        "Top k",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[40, 100],
+        show_values= True,
+    )
+```

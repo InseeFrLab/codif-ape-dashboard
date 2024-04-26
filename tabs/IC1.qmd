@@ -1,0 +1,44 @@
+
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p2",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date)
+)
+```
+
+## Row {height=80%}
+
+```{python}
+#| output: false
+
+@reactive.Calc
+def get_ic_time_frame():
+    min_frame, max_frame = input.time_window_p2()
+    ic_df = duckdb.sql(
+        f"""
+        SELECT
+            "Response.IC"
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+    return ic_df
+```
+
+```{python}
+#| title: Distribution des indices de confiances
+
+@render_widget
+def plot_ic_histogram():
+    return helpers.make_histogram(
+        get_ic_time_frame(),
+        "Response.IC",
+        yaxis_title="Nombre de liasses",
+    )
+```

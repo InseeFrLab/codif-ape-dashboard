@@ -1,0 +1,45 @@
+## Row {height=20%}
+
+```{python}
+ui.input_slider(
+    id="time_window_p5",
+    label="Fenêtre temporelle",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date)
+)
+```
+
+## Row {height=80%}
+
+```{python}
+
+@reactive.Calc
+def p5_df():
+    min_frame, max_frame = input.time_window_p5()
+    data = duckdb.sql(
+        f"""
+        SELECT
+            "Query.TEXT_FEATURE" as "text",
+            "Response.IC" as "IC",
+            "Response.1.code" as "sous-classe",
+            "Response.2.code" as "sous-classe-2",
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        """
+    ).to_df()
+    data["classe"] = data['sous-classe'].str[:-1]
+    data["groupe"] = data['sous-classe'].str[:-2]
+    data["division"] = data['sous-classe'].str[:-3]
+    data["section"] = data['division'].map(constants.NAF_SECTIONS)
+
+    return data
+
+@render.data_frame
+def view_data():
+    return render.DataGrid(
+        p5_df(),
+        filters=True
+    )
+```
