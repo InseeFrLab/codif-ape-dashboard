@@ -1,29 +1,3 @@
-
-```{python}
-#| context: setup
-#| output: false
-golden_test = duckdb.sql(
-    """
-    SELECT
-        apet_manual,
-        "Response.IC",
-        "Response.1.code",
-        "Response.2.code",
-        "Response.3.code",
-        "Response.4.code",
-        "Response.5.code",
-        CASE
-            WHEN apet_manual = "Response.1.code" THEN TRUE
-            ELSE FALSE
-        END as result
-    FROM data_annotated
-    """
-).to_df()
-```
-
-
-
-
 ```{python}
 #| output: false
 
