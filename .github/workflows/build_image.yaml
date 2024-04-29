@@ -30,7 +30,7 @@ jobs:
             # set tag for scheduled build
             type=schedule,pattern=nightly
             # set tag nightly to force update of image
-            type=match,pattern=v(.*),group=1,value=nightly
+            type=match,pattern=v0.0.1,group=0,value=nightly
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
