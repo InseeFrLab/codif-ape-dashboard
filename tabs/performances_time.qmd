@@ -1,0 +1,100 @@
+## Row
+
+```{python}
+#| title: "Accuracy bootstrap du modèle en production en fonction du mois"
+#| padding: 0
+import numpy as np
+from sklearn.utils import resample
+import plotly.graph_objs as go
+import pandas as pd
+
+
+def get_monthly_bootstrap_accuracies(n_resamples: int = 200) -> pd.DataFrame:
+    """
+    Bootstrapping of the test set to produce confidence intervals
+    for the accuracy of the served model.
+
+    Args:
+        n_resamples (int): Number of bootstrap samples.
+
+    Returns:
+        pd.DataFrame: Bootstrap results.
+    """
+    # Test data
+    monthly_data = golden_test.copy()
+    monthly_data["date"] = pd.to_datetime(monthly_data["date"])
+    monthly_data["month"] = monthly_data["date"].dt.month
+    monthly_data["year"] = monthly_data["date"].dt.year
+    monthly_data["year_month"] = monthly_data["year"].astype(str) + "-" + monthly_data["month"].astype(str).str.zfill(2)
+
+    # Initialize empty lists to store results
+    dates = []
+    accuracies = []
+    lower_bounds = []
+    upper_bounds = []
+
+    # Group dataframe by date
+    grouped = monthly_data.groupby('year_month')
+
+    for date, group in grouped:
+        dates.append(date)
+        bootstrap_accuracies = []
+        for _ in range(n_resamples):
+            group_sample = resample(group, replace=True)
+            bootstrap_accuracy = np.mean(group_sample["result"])
+            bootstrap_accuracies.append(bootstrap_accuracy)
+        accuracies.append(np.mean(bootstrap_accuracies))
+        lower_bounds.append(np.percentile(bootstrap_accuracies, 2.5))
+        upper_bounds.append(np.percentile(bootstrap_accuracies, 97.5))
+
+    results = pd.DataFrame({
+        'year_month': dates,
+        'accuracy': accuracies,
+        'lower_bound': lower_bounds,
+        'upper_bound': upper_bounds
+    })
+    return results
+
+
+@render_widget
+def plot_monthly_accuracies():
+    # Get bootstrap results
+    results = get_monthly_bootstrap_accuracies()
+    # Plot
+    fig = go.Figure([
+        go.Scatter(
+            name="Accuracy",
+            x=results['year_month'],
+            y=results['accuracy'],
+            mode='lines',
+            line=dict(color='rgb(31, 119, 180)'),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='Upper Bound',
+            x=results['year_month'],
+            y=results['upper_bound'],
+            mode='lines',
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='Lower Bound',
+            x=results['year_month'],
+            y=results['lower_bound'],
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(68, 68, 68, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        )
+    ])
+    fig.update_layout(
+        yaxis_title='Accuracy',
+        hovermode="x",
+        yaxis_range=[0, 1],
+    )
+    return fig
+```

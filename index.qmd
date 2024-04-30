@@ -37,9 +37,13 @@ window_start = max_date - datetime.timedelta(days=7)
 
 {{< include tabs/home.qmd >}}
 
-# Performances
+# Performances I
 
 {{< include tabs/performances.qmd >}}
+
+# Performances II
+
+{{< include tabs/performances_time.qmd >}}
 
 # Indices de confiance I
 
