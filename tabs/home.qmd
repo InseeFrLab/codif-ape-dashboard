@@ -44,7 +44,8 @@ golden_test = duckdb.sql(
         CASE
             WHEN apet_manual = "Response.1.code" THEN TRUE
             ELSE FALSE
-        END as result
+        END as result,
+        date
     FROM data_annotated
     """
 ).to_df()

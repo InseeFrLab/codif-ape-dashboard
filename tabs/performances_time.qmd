@@ -1,0 +1,63 @@
+## Row
+
+```{python}
+#| title: "Accuracy du modèle en production en fonction du mois"
+#| padding: 0
+import numpy as np
+from sklearn.utils import resample
+
+
+def get_monthly_bootstrap_accuracies(n_resamples: int = 200):
+    """
+    Bootstrapping of the test set to produce confidence intervals
+    for the accuracy of the served model.
+    """
+    # Test data
+    monthly_data = golden_test.copy()
+    monthly_data["date"] = pd.to_datetime(monthly_data["date"])
+    monthly_data["month"] = monthly_data["date"].dt.month
+    monthly_data["year"] = monthly_data["date"].dt.year
+    monthly_data["year_month"] = monthly_data["year"].astype(str) + "-" + monthly_data["month"].astype(str).str.zfill(2)
+
+    # Initialize empty lists to store results
+    dates = []
+    accuracies = []
+    lower_bounds = []
+    upper_bounds = []
+
+    # Group dataframe by date
+    grouped = monthly_data.groupby('year_month')
+
+    for date, group in grouped:
+        dates.append(date)
+        bootstrap_accuracies = []
+        for _ in range(n_resamples):
+            group_sample = resample(group, replace=True)
+            bootstrap_accuracy = np.mean(group_sample["result"])
+            bootstrap_accuracies.append(bootstrap_accuracy)
+        accuracies.append(np.mean(bootstrap_accuracies))
+        lower_bounds.append(np.percentile(bootstrap_accuracies, 2.5))
+        upper_bounds.append(np.percentile(bootstrap_accuracies, 97.5))
+
+    results = pd.DataFrame({
+        'year_month': dates,
+        'accuracy': accuracies,
+        'lower_bound': lower_bounds,
+        'upper_bound': upper_bounds
+    })
+
+
+@render_widget
+def plot_monthly_accuracies():
+    # Results
+    results = get_monthly_bootstrap_accuracies()
+    # Plot bootstrap accuracies
+    return helpers.make_barplot(
+        results,
+        "year_month",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        show_values=True,
+    )
+```
