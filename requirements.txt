@@ -1,6 +1,6 @@
 duckdb==0.10.2
 pandas==2.2.0
-plotly==5.18.0
+plotly==5.22.0
 ipykernel==6.29.4
 ipywidgets==8.1.2
 nbclient==0.10.0
