@@ -45,6 +45,11 @@ window_start = max_date - datetime.timedelta(days=7)
 
 {{< include tabs/performances_time.qmd >}}
 
+# Erreurs
+
+{{< include tabs/errors.qmd >}}
+
+<!--
 # Indices de confiance I
 
 {{< include tabs/IC1.qmd >}}
@@ -64,3 +69,5 @@ window_start = max_date - datetime.timedelta(days=7)
 # Texte
 
 {{< include tabs/text.qmd >}}
+
+-->

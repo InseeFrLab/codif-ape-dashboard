@@ -1,0 +1,130 @@
+```{python}
+#| output: false
+
+from shiny import render, reactive, ui
+from shinywidgets import render_widget
+
+@reactive.Calc
+def get_problematic_errors():
+    return duckdb.sql(
+    f"""
+    SELECT
+        text_description,
+        apet_manual,
+        "Response.IC",
+        "Response.1.code",
+        "Response.2.code",
+        "Response.3.code",
+        "Response.4.code",
+        "Response.5.code",
+        CASE
+            WHEN apet_manual = "Response.1.code" THEN TRUE
+            ELSE FALSE
+        END as result,
+        date
+    FROM
+        data_annotated
+    WHERE
+        (CASE
+            WHEN apet_manual = "Response.1.code" THEN TRUE
+            ELSE FALSE
+        END) = FALSE
+        AND "Response.IC" > {input.threshold_error()};
+    """
+).to_df()
+
+@reactive.Calc
+def get_accuracy_level_errors():
+    return helpers.calculate_accuracy_levels(get_problematic_errors(), threshold=input.threshold_error(), mapping=constants.NAF_SECTIONS, pct=True)
+
+@reactive.Calc
+def get_accuracy_topk_errors():
+    return helpers.calculate_topk_accuracy(get_problematic_errors(), threshold=input.threshold_error(), pct=True)
+
+```
+
+
+## Row {height=20%}
+
+### Column {width=25%}
+
+```{python}
+#| padding: 0
+
+ui.input_slider(
+    id="threshold_error",
+    label="IC minimum pour codification automatique",
+    min=0.0,
+    max=1.0,
+    value=0.8
+)
+```
+
+
+### Column {width=25%}
+
+```{python}
+#| padding: 0
+
+@render.ui
+def liasse_number_valuebox():
+    icon = ui.HTML(
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16">
+            <path d="m.5 3 .04.87a1.99 1.99 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09L14.54 8h1.005l.256-2.819A2 2 0 0 0 13.81 3H9.828a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 6.172 1H2.5a2 2 0 0 0-2 2m5.672-1a1 1 0 0 1 .707.293L7.586 3H2.19c-.24 0-.47.042-.683.12L1.5 2.98a1 1 0 0 1 1-.98h3.672z"></path>
+            <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.707 0l-1.5-1.5a.5.5 0 0 1 .707-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0z"></path>
+        </svg>
+        """
+    )
+
+    return ui.value_box(
+        title="Nombre de liasses",
+        value=f"{get_problematic_errors().shape[0]}",
+        theme="secondary",
+        showcase=icon,
+    )
+```
+
+## Row {height=80%}
+
+### Column {width=50%}
+
+
+### Column {width=25%}
+
+```{python}
+#| title: "Taux de performance à différents niveaux de la nomenclature"
+#| padding: 0
+
+@render_widget
+def plot_accuracy_level_errors():
+    return helpers.make_barplot(
+        get_accuracy_level_errors(),
+        "Level",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[0, 100],
+        show_values= True,
+    )
+```
+
+
+### Column {width=25%}
+
+```{python}
+#| title: "Taux de performance parmi les K premiers echos"
+#| padding: 0
+
+@render_widget
+def plot_accuracy_topk_errors():
+    return helpers.make_barplot(
+        get_accuracy_topk_errors(),
+        "Top k",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[0, 100],
+        show_values= True,
+    )
+```
