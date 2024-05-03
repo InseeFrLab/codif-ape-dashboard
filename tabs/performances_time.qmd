@@ -98,3 +98,49 @@ def plot_monthly_accuracies():
     )
     return fig
 ```
+
+```{python}
+#| title: "Accuracy du modèle en production en fonction du mois 2"
+#| padding: 0
+import plotly.graph_objs as go
+import pandas as pd
+
+@render_widget
+def plot_monthly_accuracies():
+    fig = go.Figure([
+        go.Scatter(
+            name="Accuracy",
+            x=results['year_month'],
+            y=results['accuracy'],
+            mode='lines',
+            line=dict(color='rgb(31, 119, 180)'),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='Upper Bound',
+            x=results['year_month'],
+            y=results['upper_bound'],
+            mode='lines',
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='Lower Bound',
+            x=results['year_month'],
+            y=results['lower_bound'],
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(68, 68, 68, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        )
+    ])
+    fig.update_layout(
+        yaxis_title='Accuracy',
+        title='Monthly bootstrap accuracies',
+        hovermode="x"
+    )
+    fig.show()
+```
