@@ -1,0 +1,112 @@
+## Row {height=20%}
+
+### Column {width=40%}
+
+```{python}
+
+ui.input_slider(
+    id="time_window_p4_a",
+    label="Fenêtre temporelle A",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date),
+)
+```
+
+
+### Column {width=20%}
+
+```{python}
+ui.input_select(
+    "aggregation_p4",
+    "Niveau d'aggrégation:",
+    choices=["Sous-classe", "Classe", "Groupe", "Division", "Section"]
+)
+```
+
+### Column {width=40%}
+
+```{python}
+
+ui.input_slider(
+    id="time_window_p4_b",
+    label="Fenêtre temporelle B",
+    min=min_date,
+    max=max_date,
+    time_format="%F",
+    value=(window_start, max_date),
+)
+
+ui.input_checkbox(
+    "checkbox",
+    label="Afficher fenêtre B",
+    value=False,
+)
+```
+
+## Row
+
+```{python}
+#| output: false
+import pandas as pd
+
+def nrow_code_date(frame):
+    min_frame, max_frame = frame
+    data = duckdb.sql(
+        f"""
+        SELECT
+            "Response.1.code" as "sous-classe",
+            COUNT(*) AS nrow
+        FROM data
+        WHERE date >= '{min_frame}' AND date <= '{max_frame}'
+        GROUP BY "Response.1.code"
+        """
+    ).to_df()
+    data["classe"] = data['sous-classe'].str[:-1]
+    data["groupe"] = data['sous-classe'].str[:-2]
+    data["division"] = data['sous-classe'].str[:-3]
+    data["section"] = data['division'].map(constants.NAF_SECTIONS)
+    return data
+
+@reactive.Calc
+def p4_df():
+    aggregation_level = input.aggregation_p4().lower()
+
+    data = nrow_code_date((input.time_window_p4_a()))
+    data = data.groupby(aggregation_level)["nrow"].sum().reset_index()
+    data["rate"] = data["nrow"] / data["nrow"].sum()
+    data["date"] = "A"
+
+    if input.checkbox():
+        data_b = nrow_code_date(input.time_window_p4_b())
+        data_b = data_b.groupby(aggregation_level)["nrow"].sum().reset_index()
+        data_b["rate"] = data_b["nrow"] / data_b["nrow"].sum()
+        data_b["date"] = "B"
+
+        data = pd.concat([
+            data,
+            data_b
+        ])
+
+    return data.sort_values(by=["date", aggregation_level])
+```
+
+
+```{python}
+#| title: Taux de codification par code au niveau d'aggrégation choisi
+
+@render_widget
+def plot_code_distr():
+    barplot = helpers.make_barplot(
+        p4_df(),
+        input.aggregation_p4().lower(),
+        "rate",
+        color="date",
+        barmode="group"
+    )
+    barplot.update_layout(
+        legend_title_text="Fenêtre"
+    )
+    return barplot
+```

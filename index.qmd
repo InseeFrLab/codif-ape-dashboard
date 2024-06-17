@@ -45,6 +45,10 @@ window_start = max_date - datetime.timedelta(days=7)
 
 {{< include tabs/performances_time.qmd >}}
 
+# Surveillance automatisation
+
+{{< include tabs/surveillance_automatisation.qmd >}}
+
 # Erreurs
 
 {{< include tabs/errors.qmd >}}

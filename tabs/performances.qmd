@@ -27,6 +27,14 @@ def auto_rate_test():
     ).to_df().to_dict()
 
 @reactive.Calc
+def get_accuracy_level_auto():
+    return helpers.calculate_accuracy_levels(golden_test[golden_test["Response.IC"]>= input.threshold()], threshold=0, mapping=constants.NAF_SECTIONS, pct=True)
+
+@reactive.Calc
+def get_accuracy_topk_auto():
+    return helpers.calculate_topk_accuracy(golden_test[golden_test["Response.IC"]>= input.threshold()], threshold=0, pct=True)
+
+@reactive.Calc
 def get_accuracy_level_reprise():
     return helpers.calculate_accuracy_levels(golden_test[golden_test["Response.IC"]<= input.threshold()], threshold=0, mapping=constants.NAF_SECTIONS, pct=True)
 
@@ -156,6 +164,24 @@ def plot_accuracy_level():
 
 #### Row
 ```{python}
+#| title: "Taux de performance pour les liasses en auto"
+#| padding: 0
+
+@render_widget
+def plot_accuracy_level_auto():
+    return helpers.make_barplot(
+        get_accuracy_level_auto(),
+        "Level",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[30, 100],
+        show_values=True,
+    )
+```
+
+#### Row
+```{python}
 #| title: "Taux de performance pour les liasses en reprise"
 #| padding: 0
 
@@ -188,6 +214,25 @@ def plot_accuracy_topk():
         color="#003299",
         opacity=1,
         range_y=[70, 100],
+        show_values= True,
+    )
+```
+
+#### Row
+
+```{python}
+#| title: "Taux de performance pour les liasses en auto sur les K premiers echos"
+#| padding: 0
+
+@render_widget
+def plot_accuracy_topk_auto():
+    return helpers.make_barplot(
+        get_accuracy_topk_auto(),
+        "Top k",
+        "accuracy",
+        color="#003299",
+        opacity=1,
+        range_y=[30, 100],
         show_values= True,
     )
 ```
