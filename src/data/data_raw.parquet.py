@@ -8,8 +8,8 @@ con = duckdb.connect(database=':memory:')
 # Setting up S3 connection
 con.execute(f"""
 SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
-SET s3_access_key_id='projet-ape-sa';
-SET s3_secret_access_key='0obEe7LB59g1Zj65nueDa84OQvrlyfPH';
+SET s3_access_key_id='{os.getenv("AWS_ACCESS_KEY_ID")}';
+SET s3_secret_access_key='{os.getenv("AWS_SECRET_ACCESS_KEY")}';
 SET s3_session_token='';
 
 COPY(
