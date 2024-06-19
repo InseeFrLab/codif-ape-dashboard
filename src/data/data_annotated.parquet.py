@@ -24,6 +24,7 @@ INSERT INTO naf_sections_mapping (code, section) VALUES
 COPY(
     SELECT
         -- p.*
+        date,
         p.mode_calcul_ape,
         p.apet_manual,
         p."Response.1.code",
@@ -33,22 +34,22 @@ COPY(
         p."Response.5.code",
 
         -- Make sure that no IC > 1
-        CASE WHEN p."Response.IC" > 1 THEN 1 ELSE p."Response.IC" END AS "Response.IC",
+        CASE WHEN p."Response.IC" >= 1 THEN 1 ELSE p."Response.IC" END AS IC,
 
         -- Result_level_1: Compare the first 2 characters
-        CASE WHEN apet.section = response1.section THEN 1 ELSE 0 END AS Result_level_1,
+        CASE WHEN apet.section = response1.section THEN TRUE ELSE FALSE END AS Result_level_1,
 
         -- Result_level_2: Compare the first 2 characters
-        CASE WHEN SUBSTRING(p.apet_manual, 1, 2) = SUBSTRING(p."Response.1.code", 1, 2) THEN 1 ELSE 0 END AS Result_level_2,
+        CASE WHEN SUBSTRING(p.apet_manual, 1, 2) = SUBSTRING(p."Response.1.code", 1, 2) THEN TRUE ELSE FALSE END AS Result_level_2,
 
         -- Result_level_3: Compare the first 3 characters
-        CASE WHEN SUBSTRING(p.apet_manual, 1, 3) = SUBSTRING(p."Response.1.code", 1, 3) THEN 1 ELSE 0 END AS Result_level_3,
+        CASE WHEN SUBSTRING(p.apet_manual, 1, 3) = SUBSTRING(p."Response.1.code", 1, 3) THEN TRUE ELSE FALSE END AS Result_level_3,
 
         -- Result_level_4: Compare the first 4 characters
-        CASE WHEN SUBSTRING(p.apet_manual, 1, 4) = SUBSTRING(p."Response.1.code", 1, 4) THEN 1 ELSE 0 END AS Result_level_4,
+        CASE WHEN SUBSTRING(p.apet_manual, 1, 4) = SUBSTRING(p."Response.1.code", 1, 4) THEN TRUE ELSE FALSE END AS Result_level_4,
 
         -- Result_level_5: Compare the first 5 characters
-        CASE WHEN SUBSTRING(p.apet_manual, 1, 5) = SUBSTRING(p."Response.1.code", 1, 5) THEN 1 ELSE 0 END AS Result_level_5,
+        CASE WHEN SUBSTRING(p.apet_manual, 1, 5) = SUBSTRING(p."Response.1.code", 1, 5) THEN TRUE ELSE FALSE END AS Result_level_5,
 
         -- Result_k_2:
         CASE WHEN p.apet_manual = "Response.2.code" THEN 1 ELSE 0 END AS Result_k_2,
