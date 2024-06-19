@@ -19,6 +19,152 @@ import {DuckDBClient} from "npm:@observablehq/duckdb";
 const db = DuckDBClient.of({data_annotated: FileAttachment("./data/data_annotated.parquet")});
 ```
 
+```js
+const well_coded_rate = [...accuracies_by_level].find(d => (d.threshold == "All") & (d.level == "Level 5"))?.accuracy
+```
+
+```js
+Inputs.table(data_annotated)
+```
+
+```js
+Inputs.table(accuracies_by_k)
+```
+
+```js
+const accuracies_by_level = db.sql`
+-- Accuracy globale
+SELECT
+  'All' AS threshold,
+  'Level 1' AS level,
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_1 ELSE 1 END) * 100.0 AS accuracy
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Level 2',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_2 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Level 3',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_3 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Level 4',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_4 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Level 5',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 ELSE 1 END) * 100.0
+FROM data_annotated
+
+-- Performance pour les liasses en auto
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Level 1',
+  AVG(Result_level_1) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Level 2',
+  AVG(Result_level_2) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Level 3',
+  AVG(Result_level_3) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Level 4',
+  AVG(Result_level_4) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Level 5',
+  AVG(Result_level_5) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+-- Performance sur les liasses en reprise
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Level 1',
+  AVG(Result_level_1) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Level 2',
+  AVG(Result_level_2) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Level 3',
+  AVG(Result_level_3) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Level 4',
+  AVG(Result_level_4) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Level 5',
+  AVG(Result_level_5) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+`
+```
 
 
 ```js
@@ -34,15 +180,6 @@ const stats_desc = db.queryRow(`
                           FROM data_annotated
                           `)
 
-const accuracies_by_level = db.queryRow(`
-                    SELECT
-                      AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_1 ELSE 1 END) * 100.0 AS accuracy_level_1,
-                      AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_2 ELSE 1 END) * 100.0 AS accuracy_level_2,
-                      AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_3 ELSE 1 END) * 100.0 AS accuracy_level_3,
-                      AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_4 ELSE 1 END) * 100.0 AS accuracy_level_4,
-                      AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 ELSE 1 END) * 100.0 AS accuracy_level_5,
-                    FROM data_annotated;
-                    `)
 
 const daily_stats = db.sql`
                     SELECT
@@ -74,57 +211,178 @@ const threshold = Generators.input(thresholdInput);
   </div>
   <div class="card">
     <h2>Taux de bon codage</h2>
-    <span class="big">${accuracies_by_level.accuracy_level_5.toFixed(2)}%</span>
+    <span class="big">${well_coded_rate.toFixed(2)}%</span>
   </div>
 </div>
-
-```js
-Inputs.table(data_annotated)
-```
 
 
 ```js
 Plot.plot({
-  y: {grid: true},
-  color: { legend: true },
+  y: {grid: true, label: "Fréquence :"},
+  x: {grid: false, label: "Indice de confiance :"},
+  color: {label: ["Résultat :"], legend: true},
   marks: [
-    Plot.rectY(data_annotated, Plot.binX({y: "sum"}, {x: {thresholds: 50, value: "IC"}, y: (d) => d.Result_level_1 === true ? 1 : -1, fill: "Result_level_1", tip: true, insetLeft: 2}))
-
+    Plot.rectY(data_annotated, 
+      Plot.binX(
+        {y: "sum"}, 
+        {x: {thresholds: 50, value: "IC", domain: [0, 1]},
+         y: (d) => d.Result_level_1 === 1 ? 1 : -1, 
+         fill: (d) => d.Result_level_1 === 1 ? "Bonne prédiction" : "Mauvaise prédiction" , 
+         insetLeft: 2,
+         tip: {
+          format: {
+            y: (d) => `${d < 0 ? d * -1 : d}`,
+            x: (d) => `${d}`,
+            fill: (d) => `${d ? "Bonne prédiction" : "Mauvaise prédiction"}`,
+          }
+          },
+      })),
+    Plot.ruleX([threshold], {stroke: "red"}),
+    // Plot.text(
+    //   [` ← Liasses envoyée en reprise gestionnaire`],
+    //   {x: threshold - 0.18 , y: 2600, anchor: "middle"}
+    // ),
+    // Plot.text(
+    //   [`Liasses codées automatiquement →`],
+    //   {x: threshold + 0.15, y: 2600, anchor: "middle"}
+    // ),
     ]
 })
 ```
 
 
+
 ```js
-Plot.plot({
-  y: {grid: true},
-  x: {percent: true},
-  color: { legend: true },
-  marks: [
-    Plot.rectY(data_annotated, Plot.binX({y2: "count"}, 
-      {x: {thresholds: 50, value: "IC", label: "Indice de confiance"}, 
-      fill: "Result_level_1", 
-      mixBlendMode: "screen",
-      channels: {
-        name: "name",
-        x: {
-          value: "IC",
-          label: "Indice de confiance"
-        },
-        sport: "sport"
-      },
-      tip: {
-        format: {
-          name: true,
-          sport: true,
-          nationality: true,
-          y: (d) => `${d}m`,
-          x: (d) => `${d}`,
-          stroke: false
-        }
-      }
-      })),
-    Plot.ruleY([0]),
-  ]
-})
+const accuracies_by_k = db.sql`
+-- Accuracy globale
+SELECT
+  'All' AS threshold,
+  'Top 1' AS k,
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 ELSE 1 END) * 100.0 AS accuracy
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Top 2',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 + Result_k_2 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Top 3',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 + Result_k_2 + Result_k_3 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Top 4',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4 ELSE 1 END) * 100.0
+FROM data_annotated
+
+UNION ALL
+
+SELECT
+  'All',
+  'Top 5',
+  AVG(CASE WHEN data_annotated.IC > ${threshold} THEN Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4 + Result_k_5 ELSE 1 END) * 100.0
+FROM data_annotated
+
+-- Performance pour les liasses en auto
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Top 1',
+  AVG(Result_level_5) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Top 2',
+  AVG(Result_level_5 + Result_k_2) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Top 3',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Top 4',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+UNION ALL
+
+SELECT
+  'Automatique',
+  'Top 5',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4 + Result_k_5) * 100.0
+FROM data_annotated
+WHERE IC >= ${threshold}
+
+-- Performance sur les liasses en reprise
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Top 1',
+  AVG(Result_level_5) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Top 2',
+  AVG(Result_level_5 + Result_k_2) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Top 3',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Top 4',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+
+UNION ALL
+
+SELECT
+  'Reprise',
+  'Top 5',
+  AVG(Result_level_5 + Result_k_2 + Result_k_3 + Result_k_4 + Result_k_5) * 100.0
+FROM data_annotated
+WHERE IC < ${threshold}
+`
 ```
