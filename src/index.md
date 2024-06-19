@@ -10,6 +10,7 @@ import {lollipopChart} from "./components/lollipop.js";
 // npm imports
 import {DuckDBClient} from "npm:@observablehq/duckdb";
 ```
+
 ```js
 ```
 
@@ -26,14 +27,14 @@ const data_raw = db.sql`
 const stats_desc = db.queryRow(`
                           SELECT 
                             COUNT(*) AS nb_liasse, 
-                            COUNT(CASE WHEN data_raw."Response.IC" > ${threshold} THEN 1 END ) * 100.0 / COUNT(*) AS auto_rate,
+                            COUNT(CASE WHEN data_raw."Response.IC" >= ${threshold} THEN 1 END ) * 100.0 / COUNT(*) AS auto_rate,
                           FROM data_raw
                           `)
 
 const weekly_stats = db.sql`
                     SELECT
                       DATE_TRUNC('week', date) AS week_start,
-                      COUNT(CASE WHEN data_raw."Response.IC" > ${threshold} THEN 1 END) / COUNT(*) AS auto_rate,
+                      COUNT(CASE WHEN data_raw."Response.IC" >= ${threshold} THEN 1 END) / COUNT(*) AS auto_rate,
                       COUNT(*) AS nb_liasse, 
                     FROM data_raw
                     GROUP BY DATE_TRUNC('week', date);
@@ -42,7 +43,7 @@ const weekly_stats = db.sql`
 const daily_stats = db.sql`
                     SELECT
                       date,
-                      COUNT(CASE WHEN data_raw."Response.IC" > ${threshold} THEN 1 END) / COUNT(*) AS auto_rate,
+                      COUNT(CASE WHEN data_raw."Response.IC" >= ${threshold} THEN 1 END) / COUNT(*) AS auto_rate,
                       COUNT(*) AS nb_liasse, 
                     FROM data_raw
                     GROUP BY date;
