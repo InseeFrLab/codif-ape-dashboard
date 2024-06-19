@@ -3,7 +3,7 @@ import os
 
 URL = "s3://projet-ape/label-studio/annotation-campaign-2024/NAF2008/dashboard/current-model/**/*.parquet"
 
-con = duckdb.connect(database=':memory:')
+con = duckdb.connect(database=":memory:")
 
 # Setting up S3 connection
 con.execute(f"""
