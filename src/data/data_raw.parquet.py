@@ -3,7 +3,7 @@ import os
 
 URL = "s3://projet-ape/log_files/dashboard/**/*.parquet"
 
-con = duckdb.connect(database=':memory:')
+con = duckdb.connect(database=":memory:")
 
 # Setting up S3 connection
 con.execute(f"""
