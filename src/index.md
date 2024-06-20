@@ -80,11 +80,11 @@ const threshold = Generators.input(thresholdInput);
 <div class="grid grid-cols-1">
   <div class="card">
     ${resize((width) => lollipopChart(weekly_stats, {width,
-     title: "This is a title",
      pivot: stats_desc.auto_rate,
      x: "week_start",
      y: "nb_liasse",
      fill: "auto_rate",
+     label_x: "Semaine"
      }))}
   </div>
 </div>
@@ -92,11 +92,11 @@ const threshold = Generators.input(thresholdInput);
 <div class="grid grid-cols-1">
   <div class="card">
     ${resize((width) => lollipopChart(daily_stats, {width,
-     title: "This is a title",
      pivot: stats_desc.auto_rate,
      x: "date",
      y: "nb_liasse",
      fill: "auto_rate",
+     label_x: "Jour"
      }))}
   </div>
 </div>

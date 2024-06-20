@@ -1,10 +1,9 @@
 import * as Plot from "npm:@observablehq/plot";
 
-export function lollipopChart(data, {width, title, pivot=0.5, x, y, fill} = {}) {
+export function lollipopChart(data, {width, title, pivot=0.5, x, y, fill, label_x} = {}) {
   return Plot.plot({
   title: title,
   width,
-  height: 300,
   marginLeft: 50,
 
   color: {
@@ -14,7 +13,7 @@ export function lollipopChart(data, {width, title, pivot=0.5, x, y, fill} = {}) 
     symmetric: false,
     legend: true,
     percent: true,
-    label: "Taux de codification (%)"
+    label: "Taux de codification"
   },
   y: {
     tickFormat: "s",
@@ -23,7 +22,7 @@ export function lollipopChart(data, {width, title, pivot=0.5, x, y, fill} = {}) 
   },
   x: {
     type: "utc",
-    label: "Semaine"
+    label: label_x
   },
   marks: [
     Plot.ruleX(data, {
@@ -42,7 +41,17 @@ export function lollipopChart(data, {width, title, pivot=0.5, x, y, fill} = {}) 
     Plot.tip(data, Plot.pointerX({
       x: x, 
       y: y, 
-      stroke: fill
+      stroke: fill,
+      format: {
+        x: (d) => `${d.toLocaleString(undefined, {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        })}`,
+        stroke: (d) => `${d.toFixed(2)}%`,
+        y: (d) => `${d}`,
+        fx: null
+      }
     }))
   ]
 });
@@ -54,7 +63,7 @@ export function lollipopFacetedChart(data, {width, title, pivot=0.5, x, y, fill,
   return Plot.plot({
   title: title,
   width,
-  height: 300,
+  height: width * 0.35,
   marginLeft: 50,
 
   color: {
@@ -64,7 +73,7 @@ export function lollipopFacetedChart(data, {width, title, pivot=0.5, x, y, fill,
     symmetric: false,
     legend: true,
     percent: false,
-    label: "Performance (%)",
+    label: "Performance",
     // domain: [0, 100]
   },
   facet: {
@@ -79,7 +88,7 @@ export function lollipopFacetedChart(data, {width, title, pivot=0.5, x, y, fill,
   },
   x: {
     grid: false,
-    label: null,
+    label: "Aggrégation",
     domain: domain_x,
   },
   marks: [
@@ -97,9 +106,14 @@ export function lollipopFacetedChart(data, {width, title, pivot=0.5, x, y, fill,
     }),
     Plot.ruleY([0]),
     Plot.tip(data, Plot.pointerX({
-      x: x, 
-      y: y, 
-      stroke: fill
+      stroke: fill,
+      x: x,
+      y: y,
+      format: {
+        stroke: (d) => `${d.toFixed(2)}%`,
+        y: null,
+        fx: null
+      }
     }))
   ]
 })
