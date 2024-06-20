@@ -4,11 +4,16 @@ export function histogramIC(data, {width, title, IC, thresholds=50, x, y} = {}) 
   return Plot.plot({
     title: title,
     width,
-    height: 300,
+    height: width * 0.8,
     marginLeft: 50,
-    y: {grid: true, label: "Fréquence :"},
-    x: {grid: false, label: "Indice de confiance :"},
-    color: {label: ["Résultat :"], legend: true},
+    y: {grid: true, label: "Fréquence"},
+    x: {grid: false, label: "Indice de confiance"},
+    color: {
+      label: ["Résultat :"], 
+      legend: true,
+      domain: ["Mauvaise prédiction", "Bonne prédiction"],
+      range: ["#b2182b","#2166ac"],
+      },
     marks: [
       Plot.rectY(data, 
         Plot.binX(
@@ -25,7 +30,7 @@ export function histogramIC(data, {width, title, IC, thresholds=50, x, y} = {}) 
             }
             },
         })),
-      Plot.ruleX([IC], {stroke: "red"}),
+      Plot.ruleX([IC], {stroke: "white"}),
       // Plot.text(
       //   [` ← Liasses envoyée en reprise gestionnaire`],
       //   {x: threshold - 0.18 , y: 2600, anchor: "middle"}
