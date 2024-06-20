@@ -5,6 +5,7 @@ URL = "s3://projet-ape/log_files/dashboard/**/*.parquet"
 
 con = duckdb.connect(database=":memory:")
 
+LIST_VAR = "date"
 # Setting up S3 connection
 con.execute(f"""
 SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
@@ -14,7 +15,7 @@ SET s3_session_token='';
 
 COPY(
 SELECT
-    *,
+    {LIST_VAR},
     CASE
         WHEN "Response.IC" > 1 THEN 1
         ELSE "Response.IC"

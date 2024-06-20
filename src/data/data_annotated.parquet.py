@@ -5,6 +5,8 @@ URL = "s3://projet-ape/label-studio/annotation-campaign-2024/NAF2008/dashboard/c
 
 con = duckdb.connect(database=":memory:")
 
+LIST_VAR = ""
+
 # Setting up S3 connection
 con.execute(f"""
 SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
@@ -23,16 +25,7 @@ INSERT INTO naf_sections_mapping (code, section) VALUES
 
 COPY(
     SELECT
-        -- p.*
-        date,
-        p.mode_calcul_ape,
-        p.apet_manual,
-        p."Response.1.code",
-        p."Response.2.code",
-        p."Response.3.code",
-        p."Response.4.code",
-        p."Response.5.code",
-
+        {LIST_VAR}
         -- Make sure that no IC > 1
         CASE WHEN p."Response.IC" >= 1 THEN 1 ELSE p."Response.IC" END AS IC,
 
