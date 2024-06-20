@@ -13,9 +13,8 @@ import {histogramIC} from "./components/histogramIC.js";
 
 // npm imports
 import {DuckDBClient} from "npm:@observablehq/duckdb";
-```
 
-```js
+// Data imports
 const db = DuckDBClient.of({data_annotated: FileAttachment("./data/data_annotated.parquet")});
 ```
 
@@ -35,8 +34,8 @@ const pivot = well_coded_rate
 
 
 ```js
-const data_annotated = db.sql`
-                        SELECT * 
+const data_histo = db.sql`
+                        SELECT IC, Result_level_5 
                         FROM data_annotated
                         `
 
@@ -46,16 +45,6 @@ const stats_desc = db.queryRow(`
                             COUNT(CASE WHEN data_annotated.IC >= ${threshold} THEN 1 END ) * 100.0 / COUNT(*) AS auto_rate,
                           FROM data_annotated
                           `)
-
-
-const daily_stats = db.sql`
-                    SELECT
-                      date,
-                      COUNT(CASE WHEN data_annotated.IC >= ${threshold} THEN 1 END) / COUNT(*) AS auto_rate,
-                      COUNT(*) AS nb_liasse, 
-                    FROM data_annotated
-                    GROUP BY date;
-                    `
 ```
 
 ```js
@@ -98,7 +87,7 @@ function centerResize(render) {
     <h2>Distribution des indices de confiances en fonction du résultat de la codification</h2>
     <h3></h3>
       <figure style="max-width: none;">
-      ${centerResize((width) => histogramIC(data_annotated, {width,
+      ${centerResize((width) => histogramIC(data_histo, {width,
         IC: threshold,
         x: "IC",
         y: "Result_level_5",
