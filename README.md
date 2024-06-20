@@ -12,18 +12,16 @@ For more, see <https://observablehq.com/framework/getting-started>.
 
 ## Project structure
 
-A typical Framework project looks like this:
-
 ```ini
 .
 ├─ src
 │  ├─ components
-│  │  └─ timeline.js           # an importable module
+│  │  ├─ histogramIC.js        # an importable module
+│  │  └─ lollipop.js           # an importable module
 │  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
+│  │  ├─ data_annotated.parquet.py       # a data loader in python
+│  │  └─ data_raw.parquet.py             # a data loader in python
+│  ├─ performance.md     # a page
 │  └─ index.md                 # the home page
 ├─ .gitignore
 ├─ observablehq.config.js      # the project config file
@@ -43,9 +41,9 @@ A typical Framework project looks like this:
 
 ## Command reference
 
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm install`            | Install or reinstall dependencies                        |
+| Command              | Description                                              |
+| -----------------    | -------------------------------------------------------- |
+| `npm install`        | Install or reinstall dependencies                        |
 | `npm run dev`        | Start local preview server                               |
 | `npm run build`      | Build your static site, generating `./dist`              |
 | `npm run deploy`     | Deploy your project to Observable                        |
