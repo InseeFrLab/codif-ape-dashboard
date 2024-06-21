@@ -5,7 +5,8 @@ URL = "s3://projet-ape/log_files/dashboard/**/*.parquet"
 
 con = duckdb.connect(database=":memory:")
 
-LIST_VAR = "date"
+
+LIST_VAR = """date, "Response.1.code" """
 # Setting up S3 connection
 con.execute(f"""
 SET s3_endpoint='{os.getenv("AWS_S3_ENDPOINT")}';
