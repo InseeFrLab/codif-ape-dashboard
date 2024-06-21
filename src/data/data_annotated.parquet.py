@@ -5,7 +5,7 @@ URL = "s3://projet-ape/label-studio/annotation-campaign-2024/NAF2008/dashboard/c
 
 con = duckdb.connect(database=":memory:")
 
-LIST_VAR = ""
+LIST_VAR = "date"
 
 # Setting up S3 connection
 con.execute(f"""
@@ -25,7 +25,7 @@ INSERT INTO naf_sections_mapping (code, section) VALUES
 
 COPY(
     SELECT
-        {LIST_VAR}
+        {LIST_VAR},
         -- Make sure that no IC > 1
         CASE WHEN p."Response.IC" >= 1 THEN 1 ELSE p."Response.IC" END AS IC,
 
