@@ -89,18 +89,16 @@ const threshold = Generators.input(thresholdInput);
 
 <div class="grid grid-cols-1">
   <div class="card">
+  <h2>Performance bootstrap du modèle en production en fonction du mois </h2>
     ${resize((width) => bootstrapPlot(results, {width,
+        pivot: well_coded_rate,
         x: "date", 
-        y: "accuracy", 
+        y: "accuracy",
         y1: "lower_bound", 
         y2:"upper_bound"})
         )}
   </div>
 </div>
-```js
-
-```
-
 
 <!-- BOOTSTRAP COMPUTATION -->
 
@@ -129,7 +127,10 @@ Object.entries(data_grouped).forEach(([date, group]) => {
 
   for (let i = 0; i < nResamples; i++) {
     const groupSample = Array.from({ length: group.length }, () => group[Math.floor(Math.random() * group.length)]);
-    const bootstrapAccuracy = groupSample.reduce((sum, item) => sum + item.Result_level_5, 0) / groupSample.length;
+    const bootstrapAccuracy = groupSample.reduce((sum, item) => {
+      const accuracy = item.IC > threshold ? item.Result_level_5 : 1;
+      return sum + accuracy;
+    }, 0) / groupSample.length;
     bootstrapAccuracies.push(bootstrapAccuracy);
   }
 
