@@ -1,5 +1,13 @@
 # Dashboard Framework
 
+To install node 20 :
+
+```
+curl -s https://deb.nodesource.com/setup_20.x | sudo bash
+sudo apt install nodejs -y
+```
+
+
 This is an [Observable Framework](https://observablehq.com/framework) project. To start the local preview server, run:
 
 ```

@@ -1,6 +1,9 @@
 name: Publish dashboard to Pages
 
 on:
+  schedule:
+    # everyday at 6am
+    - cron: '00 6 * * *'
   push:
     branches:
       - "main"
