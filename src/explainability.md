@@ -8,6 +8,7 @@ toc: false
 ```js
 import * as Plot from "npm:@observablehq/plot";
 ```
+
 Entrez la description d'une Activité Principale d'Entreprise (APE) puis cliquez sur Submit.
 Le graphe représente l'influence de chaque terme sur la prediction finale.
 
@@ -26,6 +27,7 @@ const activite = view(
   Inputs.textarea({label: "Description APE", rows:2, cols:100, placeholder: "Entrez votre description", value: "Institut National de la Statistique et de l'Administration Economique", submit: true})
 )
 ```
+
 
 ```js
 const urlApe = transformToUrl(activite)
