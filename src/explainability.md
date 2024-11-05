@@ -127,7 +127,7 @@ const words = activite.split(" ").filter(word => word !== "");
 
 ```js
 const aggregateWords = view(Inputs.toggle({
-  label: "Aggregate at word level"
+  label: "Aggréger au niveau mots"
 }))
 ```
 
