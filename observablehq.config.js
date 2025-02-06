@@ -8,7 +8,8 @@ export default {
     {name: "Performance du modèle", path: "/performance"},
     {name: "Surveillance automatisée du modèle", path: "/surveillance-auto"},
     {name: "Explicabilité", path: "/explainability"},
-    {name: "Changement de nomenclature NAF 2025", path: "/naf-2025"}
+    {name: "Changement de nomenclature NAF 2025", path: "/naf-2025"},
+    {name: "Codification en NAF rev 2", path: "/naf-rev2"}
   ],
 
   // Content to add to the head of the page, e.g. for a favicon:
