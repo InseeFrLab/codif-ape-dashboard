@@ -1,10 +1,10 @@
 ---
-title: Passage en NAF 2025
+title: Codification en NAF rev 2
 theme: dashboard
 toc: false
 ---
 
-# Changement de nomenclature de la NAF
+# Codification en NAF 2008
 
 Entrez la description d'une Activité Principale d'Entreprise (APE)
 
@@ -132,7 +132,7 @@ const precActivSecAgri = Generators.input(precActivSecAgriInput);
 
 ```js
 function transformToUrl(description, options = {}) {
-  const baseUrl = "https://codification-ape-dev.lab.sspcloud.fr/predict?";
+  const baseUrl = "https://codification-meta-rev2-dev.lab.sspcloud.fr/predict?";
   const params = [];
   
   const {
