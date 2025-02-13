@@ -28,7 +28,7 @@ Entrez la description d'une Activité Principale d'Entreprise (APE)
   </div>
   <div class="card">
     <h2>Surface</h2>
-    <span class="big">${surfInput}</span>
+    <span class="big">${surfInputDisplay}</span>
   </div>
   <div class="card">
     <h2>Caractère permanent ou saisonnier</h2>
@@ -40,7 +40,7 @@ Entrez la description d'une Activité Principale d'Entreprise (APE)
 <div class="grid grid-cols-3">
   <div class="card">
     <h2>Nature de l'activité</h2>
-    <span class="big">${natInput}</span>
+    <span class="big">${natInputDisplay}</span>
   </div>
   <div class="card">
     <h2>Autre nature d'activité</h2>
