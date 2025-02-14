@@ -280,7 +280,9 @@ function createResponsiveProgressBar(canvas, predictions_arr) {
     // Display the value
     const text = `${(t * 100).toFixed(2)}%`;
     const padding = 5;
-    const textX = Math.min(barWidth + padding, canvas.width - context.measureText(text).width - padding);
+    // const textX = Math.min(barWidth + padding, canvas.width - context.measureText(text).width - padding);
+    const textX = Math.min(
+  barWidth + padding - (t >= 0.7 ? 50 : 0),canvas.width - context.measureText(text).width - padding);
     const textY = canvas.height / 2;
     
     context.fillText(text, textX, textY);
