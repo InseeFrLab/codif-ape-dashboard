@@ -28,7 +28,7 @@ const well_coded_rate = [...accuracies_by_level].find(d => (d.threshold == "Tota
 ```
 
 ```js
-const thresholdInput = Inputs.range([0, 1], {step: .01, value: 0.8});
+const thresholdInput = Inputs.range([0, 1], {step: .01, value: 0.7});
 const threshold = Generators.input(thresholdInput);
 ```
 
