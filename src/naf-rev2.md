@@ -78,6 +78,7 @@ Entrez la description d'une Activité Principale d'Entreprise (APE)
   <div class="card">
     <h1>Indice de confiance :</h1>
     <canvas id="canvas" width="1200" height="30" style="max-width: 100%; height: 30px;"></canvas>
+    <h2>Score: ${((predictions_arr[1].probabilite - predictions_arr[2].probabilite) * 100).toFixed(2)}%</h2>
   </div>
 
 
